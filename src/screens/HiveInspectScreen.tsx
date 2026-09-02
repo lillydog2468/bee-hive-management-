@@ -426,7 +426,7 @@ function InspectionCard({
       <p className="card-copy">
         Queen {entry.queenSeen ? 'seen' : 'not seen'}
         {' · '}
-        {markedLabel(entry.queenMarked).toLowerCase()}
+        mark {markedLabel(entry.queenMarked).toLowerCase()}
         {entry.queenMarked === 'yes' && entry.queenMarkColour
           ? ` · ${colourLabel(entry.queenMarkColour).toLowerCase()}`
           : entry.queenMarked === 'yes'
