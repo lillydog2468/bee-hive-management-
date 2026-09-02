@@ -130,7 +130,7 @@ export const FRAME_CONDITION_IDS = [
   UNBUILT_SPRING_FRAME,
 ] as const
 
-/** Waxed and unbuilt lots are a mix of deep and shallow; the split is not given. */
+/** Waxed lot is mixed deep/shallow (total 50, no subtype split). Unbuilt is still a mix pending more detail. */
 export const SPRING_FRAME_LOT_IDS = [
   WAXED_SPRING_FRAME,
   UNBUILT_SPRING_FRAME,

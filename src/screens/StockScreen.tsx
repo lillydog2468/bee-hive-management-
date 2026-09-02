@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BOTTOM_BOARD, DEEP_USED_FRAME, INNER_COVER, METAL_LID, SHALLOW_FRAME, SPRING_FRAME_LOT_IDS, WOODEN_LID } from '../domain/equipment.ts'
+import { BOTTOM_BOARD, DEEP_USED_FRAME, INNER_COVER, METAL_LID, SHALLOW_FRAME, UNBUILT_SPRING_FRAME, WAXED_SPRING_FRAME, WOODEN_LID } from '../domain/equipment.ts'
 import { Layout } from '../components/Layout.tsx'
 import { Stepper } from '../components/Stepper.tsx'
 import { inUseCount, unusedCount } from '../domain/inventory.ts'
@@ -104,16 +104,24 @@ export function StockScreen({ typeId }: { typeId: string }) {
 
       {type.id === DEEP_USED_FRAME ? (
         <div className="banner">
-          <p>These 50 are deep used frames. The waxed and unbuilt spring lots are a mix, not more deeps.</p>
+          <p>These 50 are deep used frames. They are not mixed with the spring lots.</p>
         </div>
       ) : null}
 
-      {(SPRING_FRAME_LOT_IDS as readonly string[]).includes(type.id) ? (
+      {type.id === WAXED_SPRING_FRAME ? (
         <div className="banner">
           <p>
-            This lot is a mix of deep and shallow frames, ready for spring. The
-            split has not been given, so it stays as one count of 50 — not all
-            deep, and not invented deep versus shallow numbers.
+            New waxed frames ready for spring. Some are deep and some are
+            shallow. Shown as one lot of 50 — no invented deep/shallow counts.
+          </p>
+        </div>
+      ) : null}
+
+      {type.id === UNBUILT_SPRING_FRAME ? (
+        <div className="banner">
+          <p>
+            Unbuilt frames ready for spring. Still a mix; more detail has not
+            been given. Shown as one lot of 50 — no deep/shallow split invented.
           </p>
         </div>
       ) : null}
@@ -121,9 +129,9 @@ export function StockScreen({ typeId }: { typeId: string }) {
       {type.id === SHALLOW_FRAME ? (
         <div className="banner">
           <p>
-            Shallows in the waxed and unbuilt spring lots have not been split
-            out. This row stays at 0 until those numbers arrive. It is not a
-            claim that there are no shallow frames.
+            Shallows in the waxed lot (and any in the unbuilt lot) have not been
+            counted separately. This row stays at 0. It is not a split of the
+            spring lots and not a claim that there are no shallow frames.
           </p>
         </div>
       ) : null}

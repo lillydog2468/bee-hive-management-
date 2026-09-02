@@ -7,6 +7,8 @@ import {
   METAL_LID,
   SHALLOW_FRAME,
   SPRING_FRAME_LOT_IDS,
+  UNBUILT_SPRING_FRAME,
+  WAXED_SPRING_FRAME,
   WOODEN_LID,
 } from '../domain/equipment.ts'
 import { inUseCount, unusedCount } from '../domain/inventory.ts'
@@ -94,7 +96,7 @@ export function UnusedScreen() {
         <section className="group">
           <p className="spotlight-kicker">Used frames</p>
           <h2>Deep used</h2>
-          <p className="card-copy">These 50 are deep. The spring lots below are a mix, not more deeps.</p>
+          <p className="card-copy">These 50 are deep. The waxed lot below is mixed, not more deeps.</p>
           <ul className="kit-list">
             <KitRow
               type={usedFrames}
@@ -112,9 +114,10 @@ export function UnusedScreen() {
           <p className="spotlight-kicker">Ready for spring</p>
           <h2>Two lots</h2>
           <p className="card-copy">
-            50 waxed and 50 unbuilt. Each lot is a mix of deep and shallow. The
-            split has not been given, so they stay as two lots — not as all deep
-            and not as invented deep/shallow counts.
+            50 new waxed frames, ready for spring — some deep and some shallow,
+            shown as one lot of 50, with no invented deep/shallow counts. 50
+            unbuilt, ready for spring — still a mix; more detail has not been
+            given, so no split is invented for those either.
           </p>
           <ul className="kit-list">
             {springLots.map((type) => (
@@ -124,7 +127,13 @@ export function UnusedScreen() {
                 owned={state.owned[type.id] ?? 0}
                 used={inUseCount(inUse, type.id)}
                 spotlight
-                note="mix of deep and shallow; split not given"
+                note={
+                  type.id === WAXED_SPRING_FRAME
+                    ? 'mixed deep and shallow; total 50, no subtype counts'
+                    : type.id === UNBUILT_SPRING_FRAME
+                      ? 'mix pending more detail; no split invented'
+                      : undefined
+                }
                 onOpen={() => go({ page: 'stock', typeId: type.id })}
               />
             ))}

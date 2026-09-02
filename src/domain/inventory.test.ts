@@ -76,7 +76,7 @@ describe('seed', () => {
     }
   })
 
-  it('tracks deep used frames and two mixed spring lots without inventing a split', () => {
+  it('tracks 50 deep used frames and two spring lots of 50 with no invented split', () => {
     const state = createSeedState()
     expect(state.owned[DEEP_USED_FRAME]).toBe(50)
     expect(state.owned[WAXED_SPRING_FRAME]).toBe(50)
