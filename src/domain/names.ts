@@ -18,6 +18,7 @@ export function defaultHiveName(
   siteId: string,
   kind: HiveKind,
   hives: Hive[],
+  siteName?: string,
 ): string {
   const names = hives.map((hive) => hive.name)
   if (siteId === 'home-yard') {
@@ -30,12 +31,15 @@ export function defaultHiveName(
       ? nextNumberedName('Garage hive', names)
       : nextNumberedName('Garage nuc', names)
   }
-  if (kind === 'full-size') return nextNumberedName('Far side hive', names)
-  if (kind === 'nuc-5') {
-    if (!names.includes('Far side nuc')) return 'Far side nuc'
+  if (siteId === 'far-side') {
+    if (kind === 'full-size') return nextNumberedName('Far side hive', names)
+    if (kind === 'nuc-5' && !names.includes('Far side nuc')) return 'Far side nuc'
     return nextNumberedName('Far side nuc', names)
   }
-  return nextNumberedName('Far side nuc', names)
+  const prefix = siteName?.trim() || 'Hive'
+  return kind === 'full-size'
+    ? nextNumberedName(prefix, names)
+    : nextNumberedName(`${prefix} nuc`, names)
 }
 
 export function defaultPadName(size: PadSize, pads: Pad[]): string {

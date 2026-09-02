@@ -60,8 +60,8 @@ export function SiteMapPanel({
   }
 
   function moveVertex(index: number, point: { x: number; y: number }) {
-    const shape = site.shape.map((item, i) => (i === index ? point : item))
-    dispatch({ type: 'set-shape', siteId: site.id, shape })
+    const shape = site!.shape.map((item, i) => (i === index ? point : item))
+    dispatch({ type: 'set-shape', siteId: site!.id, shape })
   }
 
   return (
@@ -114,6 +114,7 @@ export function SiteMapPanel({
       ) : (
         <p className="hint">
           Hold and drag a marker. A short tap opens it. Glyphs follow Keith’s key.
+          Empty dashed pads are free positions.
         </p>
       )}
 
@@ -160,14 +161,21 @@ export function SiteMapPanel({
       {addOpen ? (
         <Sheet title="Add to this site" onClose={() => setAddOpen(false)}>
           <p className="sheet-lede">
-            Hives occupy unused-pool kit when you set a stack. Every hive needs a
-            bottom board, an inner cover and a lid. On the L-yard, hives and kit
-            can all be moved — they are not glued to a pad. Garage pads keep their
-            own bottom board and wooden lid, even when empty, and those cannot be
-            used anywhere else. Extra pads you add here do not invent more bottoms
-            or lids.
+            Empty pads give a split somewhere to go, and leave room as the yard
+            grows. Hives occupy unused-pool kit when you set a stack. Every hive
+            needs a bottom board, an inner cover and a lid. On the L-yard, hives
+            and kit can all be moved — they are not glued to a pad. Garage pads
+            keep their own bottom board and wooden lid, even when empty, and
+            those cannot be used anywhere else. Extra pads you add here do not
+            invent more bottoms or lids.
           </p>
           <div className="choice-list">
+            <button type="button" onClick={() => addPad('full-size')}>
+              Empty full-size pad
+            </button>
+            <button type="button" onClick={() => addPad('nuc')}>
+              Empty nuc pad
+            </button>
             <button type="button" onClick={() => addHive('full-size')}>
               Full-size hive
             </button>
@@ -176,12 +184,6 @@ export function SiteMapPanel({
             </button>
             <button type="button" onClick={() => addHive('nuc-5')}>
               5-frame nuc
-            </button>
-            <button type="button" onClick={() => addPad('full-size')}>
-              Empty full-size pad
-            </button>
-            <button type="button" onClick={() => addPad('nuc')}>
-              Empty nuc pad
             </button>
           </div>
         </Sheet>

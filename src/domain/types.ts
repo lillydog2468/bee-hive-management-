@@ -47,6 +47,24 @@ export type Site = {
   shape: Point[]
 }
 
+export type FeedingEntry = {
+  id: string
+  date: string
+  litres: number
+}
+
+export type SplitRecord = {
+  id: string
+  date: string
+  sourceHiveId: string
+  sourceName: string
+  destHiveId: string
+  destName: string
+  destPadId: string | null
+  destSiteId: string
+  destSiteName: string
+}
+
 export type Hive = {
   id: string
   name: string
@@ -56,6 +74,7 @@ export type Hive = {
   x: number
   y: number
   padId: string | null
+  feedings: FeedingEntry[]
 }
 
 export type Pad = {
@@ -71,13 +90,14 @@ export type Pad = {
 }
 
 export type AppState = {
-  version: 5
+  version: 6
   appName: string
   equipmentTypes: EquipmentType[]
   owned: Record<string, number>
   sites: Site[]
   hives: Hive[]
   pads: Pad[]
+  splits: SplitRecord[]
 }
 
 export type FeedingConfig = {

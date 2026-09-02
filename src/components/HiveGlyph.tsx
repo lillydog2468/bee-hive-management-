@@ -1,3 +1,7 @@
+import {
+  fullSizeUsesNestedSquare,
+  nucGlyphLineCount,
+} from '../domain/mapGlyph.ts'
 import type { HiveKind } from '../domain/types.ts'
 
 export function HiveGlyph({
@@ -12,7 +16,7 @@ export function HiveGlyph({
   title?: string
 }) {
   if (kind === 'full-size') {
-    const two = boxCount >= 2
+    const two = fullSizeUsesNestedSquare(boxCount)
     return (
       <svg
         className="hive-glyph is-full"
@@ -45,7 +49,7 @@ export function HiveGlyph({
     )
   }
 
-  const lines = Math.min(3, Math.max(0, boxCount))
+  const lines = nucGlyphLineCount(boxCount)
   const gap = 6
   const start = 16 - ((lines - 1) * gap) / 2
   return (

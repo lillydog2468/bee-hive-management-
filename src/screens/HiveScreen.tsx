@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { HiveStack } from '../components/HiveStack.tsx'
 import { Layout } from '../components/Layout.tsx'
+import { PhotoField } from '../components/PhotoField.tsx'
 import { Sheet } from '../components/Sheet.tsx'
 import { Stepper } from '../components/Stepper.tsx'
+import { formatLitres, formatUkDate, todayInPrague } from '../domain/dates.ts'
 import { METAL_LID, WOODEN_LID } from '../domain/equipment.ts'
-import { hiveKindLabel } from '../domain/names.ts'
+import { hiveKindLabel, padSizeLabel } from '../domain/names.ts'
 import {
   hiveNeedsBottom,
   hiveNeedsInnerCover,
@@ -17,13 +19,19 @@ import type { FeedingConfig } from '../domain/types.ts'
 import { useStore } from '../state/context.ts'
 
 export function HiveScreen({ hiveId }: { hiveId: string }) {
-  const { state, dispatch, go } = useStore()
+  const { state, dispatch, go, photos, setHivePhoto } = useStore()
   const hive = state.hives.find((item) => item.id === hiveId)
   const [renaming, setRenaming] = useState(false)
   const [name, setName] = useState(hive?.name ?? '')
   const [moveOpen, setMoveOpen] = useState(false)
   const [extraOpen, setExtraOpen] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
+  const [feedOpen, setFeedOpen] = useState(false)
+  const [feedDate, setFeedDate] = useState(todayInPrague)
+  const [feedLitres, setFeedLitres] = useState('')
+  const [splitOpen, setSplitOpen] = useState(false)
+  const [splitDate, setSplitDate] = useState(todayInPrague)
+  const [splitPadId, setSplitPadId] = useState<string | null>(null)
 
   if (!hive) {
     return (
@@ -84,6 +92,16 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         </button>
       }
     >
+      {photos.hives[hive.id] ? (
+        <img className="hive-photo" src={photos.hives[hive.id]} alt="" />
+      ) : null}
+      <PhotoField
+        photo={photos.hives[hive.id]}
+        onChange={(dataUrl) => setHivePhoto(hive.id, dataUrl)}
+        onRemove={() => setHivePhoto(hive.id, null)}
+        addLabel="Add a photo of this hive"
+      />
+
       <HiveStack
         stack={shown}
         types={state.equipmentTypes}
@@ -92,41 +110,42 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         missingInner={needsInner}
       />
 
+      <FeedingLog
+        feedings={hive.feedings}
+        onAdd={() => {
+          setFeedDate(todayInPrague())
+          setFeedLitres('')
+          setFeedOpen(true)
+        }}
+        onRemove={(feedingId) =>
+          dispatch({ type: 'remove-feeding', hiveId: hive.id, feedingId })
+        }
+      />
+
       {hive.kind === 'full-size' ? (
         <section className="card stack-card">
           <h2>Brood chambers</h2>
           <p className="card-copy">
-            Deep 10-frame boxes. Leave unset until you know whether this hive has one or two.
+            Deep 10-frame boxes. Add extra deeps if you do not have enough honey
+            supers. Unused kit goes down when a deep goes on, and back up when it
+            comes off.
           </p>
-          <div className="segment">
-            <button
-              type="button"
-              className={brood === 0 ? 'is-on' : ''}
-              onClick={() => dispatch({ type: 'set-brood', hiveId: hive.id, count: 0 })}
-            >
-              Not set
-            </button>
-            <button
-              type="button"
-              className={brood === 1 ? 'is-on' : ''}
-              onClick={() => dispatch({ type: 'set-brood', hiveId: hive.id, count: 1 })}
-            >
-              1 deep
-            </button>
-            <button
-              type="button"
-              className={brood === 2 ? 'is-on' : ''}
-              onClick={() => dispatch({ type: 'set-brood', hiveId: hive.id, count: 2 })}
-            >
-              2 deeps
-            </button>
-          </div>
+          <Stepper
+            label="deep boxes"
+            value={brood}
+            min={0}
+            max={12}
+            onChange={(count) =>
+              dispatch({ type: 'set-brood', hiveId: hive.id, count })
+            }
+          />
 
           <h2>Honey supers</h2>
           <p className="card-copy">Shallow 10-frame boxes, added in spring as needed.</p>
           <Stepper
             label="honey supers"
             value={supers}
+            max={12}
             onChange={(count) =>
               dispatch({ type: 'set-supers', hiveId: hive.id, count })
             }
@@ -400,6 +419,33 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         )}
       </section>
 
+      <section className="card">
+        <div className="card-row">
+          <div>
+            <h2>Splits</h2>
+            <p className="card-copy">
+              Record a split from this hive onto an empty pad. Date, this hive,
+              and the destination — nothing else until you add more later.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="chip"
+            onClick={() => {
+              setSplitDate(todayInPrague())
+              setSplitPadId(null)
+              setSplitOpen(true)
+            }}
+          >
+            Record a split
+          </button>
+        </div>
+        <SplitHistory
+          hiveId={hive.id}
+          splits={state.splits}
+        />
+      </section>
+
       <div className="actions">
         <button className="secondary" type="button" onClick={() => setMoveOpen(true)}>
           Move to another site
@@ -417,6 +463,62 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
           Remove hive
         </button>
       </div>
+
+      {feedOpen ? (
+        <Sheet title="Add feeding" onClose={() => setFeedOpen(false)}>
+          <p className="sheet-lede">
+            Litres of sugar syrup on this hive. Mix ratio is not recorded.
+          </p>
+          <label className="field">
+            <span>Date</span>
+            <input
+              type="date"
+              value={feedDate}
+              onChange={(event) => setFeedDate(event.target.value)}
+            />
+          </label>
+          <label className="field">
+            <span>Litres</span>
+            <input
+              type="number"
+              min={0.1}
+              step={0.5}
+              inputMode="decimal"
+              value={feedLitres}
+              onChange={(event) => setFeedLitres(event.target.value)}
+              placeholder="e.g. 2"
+            />
+          </label>
+          <button
+            className="primary"
+            type="button"
+            disabled={!(Number(feedLitres) > 0) || !feedDate}
+            onClick={() => {
+              dispatch({
+                type: 'add-feeding',
+                hiveId: hive.id,
+                id: crypto.randomUUID(),
+                date: feedDate,
+                litres: Number(feedLitres),
+              })
+              setFeedOpen(false)
+            }}
+          >
+            Save feeding
+          </button>
+        </Sheet>
+      ) : null}
+
+      {splitOpen ? (
+        <SplitSheet
+          hiveId={hive.id}
+          date={splitDate}
+          padId={splitPadId}
+          onDate={setSplitDate}
+          onPad={setSplitPadId}
+          onClose={() => setSplitOpen(false)}
+        />
+      ) : null}
 
       {renaming ? (
         <Sheet title="Rename" onClose={() => setRenaming(false)}>
@@ -539,6 +641,172 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         </Sheet>
       ) : null}
     </Layout>
+  )
+}
+
+function FeedingLog({
+  feedings,
+  onAdd,
+  onRemove,
+}: {
+  feedings: { id: string; date: string; litres: number }[]
+  onAdd: () => void
+  onRemove: (feedingId: string) => void
+}) {
+  const recent = [...feedings].sort((a, b) => {
+    if (a.date === b.date) return b.id.localeCompare(a.id)
+    return b.date.localeCompare(a.date)
+  })
+  return (
+    <section className="card stack-card">
+      <div className="card-row">
+        <div>
+          <h2>Sugar syrup</h2>
+          <p className="card-copy">
+            Litres fed, with the date. Empty until you add one.
+          </p>
+        </div>
+        <button type="button" className="chip" onClick={onAdd}>
+          Add feeding
+        </button>
+      </div>
+      {recent.length === 0 ? (
+        <p className="card-copy">No feedings logged yet.</p>
+      ) : (
+        <ul className="log-list">
+          {recent.map((entry) => (
+            <li key={entry.id}>
+              <span>
+                {formatUkDate(entry.date)} · {formatLitres(entry.litres)}
+              </span>
+              <button
+                type="button"
+                className="text-btn"
+                onClick={() => onRemove(entry.id)}
+              >
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+function SplitHistory({
+  hiveId,
+  splits,
+}: {
+  hiveId: string
+  splits: {
+    id: string
+    date: string
+    sourceHiveId: string
+    sourceName: string
+    destHiveId: string
+    destName: string
+    destSiteName: string
+  }[]
+}) {
+  const related = splits
+    .filter((item) => item.sourceHiveId === hiveId || item.destHiveId === hiveId)
+    .sort((a, b) => b.date.localeCompare(a.date))
+  if (related.length === 0) {
+    return <p className="card-copy">No splits logged yet.</p>
+  }
+  return (
+    <ul className="log-list">
+      {related.map((item) => (
+        <li key={item.id}>
+          <span>
+            {formatUkDate(item.date)} · from {item.sourceName} to {item.destName}{' '}
+            ({item.destSiteName})
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function SplitSheet({
+  hiveId,
+  date,
+  padId,
+  onDate,
+  onPad,
+  onClose,
+}: {
+  hiveId: string
+  date: string
+  padId: string | null
+  onDate: (value: string) => void
+  onPad: (value: string) => void
+  onClose: () => void
+}) {
+  const { state, dispatch, go } = useStore()
+  const emptyPads = state.pads.filter((pad) => !pad.occupiedHiveId)
+  const selected = emptyPads.find((pad) => pad.id === padId)
+
+  return (
+    <Sheet title="Record a split" onClose={onClose}>
+      <p className="sheet-lede">
+        The split stays on this hive’s record and occupies the empty pad you
+        pick. Add a pad on the aerial if you need more room.
+      </p>
+      <label className="field">
+        <span>Date</span>
+        <input
+          type="date"
+          value={date}
+          onChange={(event) => onDate(event.target.value)}
+        />
+      </label>
+      {emptyPads.length === 0 ? (
+        <p className="sheet-lede">
+          There is no empty pad yet. Add one on a site aerial, then come back.
+        </p>
+      ) : (
+        <div className="choice-list">
+          {state.sites.map((site) => {
+            const pads = emptyPads.filter((pad) => pad.siteId === site.id)
+            if (pads.length === 0) return null
+            return pads.map((pad) => (
+              <button
+                key={pad.id}
+                type="button"
+                className={pad.id === padId ? 'is-on' : ''}
+                onClick={() => onPad(pad.id)}
+              >
+                {site.name} · {pad.name}
+                <span>Empty {padSizeLabel(pad.size).toLowerCase()}</span>
+              </button>
+            ))
+          })}
+        </div>
+      )}
+      <button
+        className="primary"
+        type="button"
+        disabled={!selected || !date}
+        onClick={() => {
+          if (!selected) return
+          const newHiveId = crypto.randomUUID()
+          dispatch({
+            type: 'record-split',
+            id: crypto.randomUUID(),
+            date,
+            sourceHiveId: hiveId,
+            destPadId: selected.id,
+            newHiveId,
+          })
+          onClose()
+          go({ page: 'hive', hiveId: newHiveId })
+        }}
+      >
+        Occupy pad
+      </button>
+    </Sheet>
   )
 }
 

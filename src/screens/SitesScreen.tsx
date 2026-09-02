@@ -1,13 +1,22 @@
+import { useState } from 'react'
 import { Layout } from '../components/Layout.tsx'
+import { Sheet } from '../components/Sheet.tsx'
 import { useStore } from '../state/context.ts'
 
 export function SitesScreen() {
-  const { state, go } = useStore()
+  const { state, dispatch, go } = useStore()
+  const [addOpen, setAddOpen] = useState(false)
+  const [yardName, setYardName] = useState('')
 
   return (
     <Layout
       title="Sites"
-      subtitle="Three places: the L-shaped home yard, the space above the garage, and the far side of the house."
+      subtitle="Home yard, above the garage, far side of the house — and any extra yards you add."
+      actions={
+        <button className="text-btn" type="button" onClick={() => setAddOpen(true)}>
+          Add a yard
+        </button>
+      }
     >
       <ul className="site-list">
         {state.sites.map((site) => {
@@ -50,6 +59,37 @@ export function SitesScreen() {
           )
         })}
       </ul>
+      {addOpen ? (
+        <Sheet title="Add a yard" onClose={() => setAddOpen(false)}>
+          <p className="sheet-lede">
+            Name it yourself. The outline starts as a rectangle — tweak the
+            shape and add empty pads on the aerial.
+          </p>
+          <label className="field">
+            <span>Yard name</span>
+            <input
+              value={yardName}
+              onChange={(event) => setYardName(event.target.value)}
+              autoComplete="off"
+              placeholder="e.g. the field name"
+            />
+          </label>
+          <button
+            className="primary"
+            type="button"
+            disabled={!yardName.trim()}
+            onClick={() => {
+              const id = `site-${crypto.randomUUID()}`
+              dispatch({ type: 'add-site', id, name: yardName.trim() })
+              setAddOpen(false)
+              setYardName('')
+              go({ page: 'site', siteId: id })
+            }}
+          >
+            Add yard
+          </button>
+        </Sheet>
+      ) : null}
     </Layout>
   )
 }

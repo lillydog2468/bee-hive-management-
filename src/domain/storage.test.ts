@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { METAL_LID, WOODEN_LID } from './equipment.ts'
 import { unusedForType } from './inventory.ts'
-import { createSeedState } from './seed.ts'
+import { createSeedState, HOME_YARD, L_YARD_GAP_PAD } from './seed.ts'
 import { migrateState } from './storage.ts'
 
 describe('storage migrate', () => {
@@ -21,7 +21,7 @@ describe('storage migrate', () => {
       })),
     }
     const next = migrateState(v1)
-    expect(next?.version).toBe(5)
+    expect(next?.version).toBe(6)
     expect(next?.pads.filter((pad) => pad.lockedBottomAndLid)).toHaveLength(10)
     expect(unusedForType(next!, WOODEN_LID)).toBe(0)
     expect(unusedForType(next!, METAL_LID)).toBe(5)
@@ -65,5 +65,10 @@ describe('storage migrate', () => {
     ).toBe(true)
     expect(next?.owned['bottom-board']).toBe(2)
     expect(next?.owned['inner-cover']).toBe(2)
+    expect(
+      next?.pads.some(
+        (pad) => pad.id === L_YARD_GAP_PAD.id && pad.siteId === HOME_YARD,
+      ),
+    ).toBe(true)
   })
 })

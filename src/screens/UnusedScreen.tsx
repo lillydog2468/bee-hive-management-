@@ -19,6 +19,7 @@ import {
   unusedCount,
 } from '../domain/inventory.ts'
 import type { EquipmentType } from '../domain/types.ts'
+import { KitThumb } from '../components/KitIllustration.tsx'
 import { Layout } from '../components/Layout.tsx'
 import { useStore } from '../state/context.ts'
 
@@ -322,6 +323,7 @@ function KitRow({
   spotlight?: boolean
   note?: string
 }) {
+  const { photos } = useStore()
   const unused = unusedCount(owned, used)
   const free = Math.max(0, unused)
   const uncounted = isUncountedOnHives(owned, used)
@@ -338,6 +340,7 @@ function KitRow({
         className={spotlight ? 'kit-row is-spotlight' : 'kit-row'}
         onClick={onOpen}
       >
+        <KitThumb typeId={type.id} photo={photos.types[type.id]} />
         <span className="kit-copy">
           <span className="kit-name">{type.name}</span>
           <span className="kit-meta">

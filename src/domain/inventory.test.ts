@@ -106,6 +106,16 @@ describe('seed', () => {
     }
   })
 
+  it('seeds an empty pad in the L-yard drawing gap', () => {
+    const state = createSeedState()
+    const pad = state.pads.find((item) => item.id === 'pad-yard-gap')
+    expect(pad?.siteId).toBe(HOME_YARD)
+    expect(pad?.occupiedHiveId).toBeNull()
+    expect(pad?.lockedBottomAndLid).toBe(false)
+    expect(pad?.x).toBe(64)
+    expect(pad?.y).toBe(24)
+  })
+
   it('seeds L-yard box counts from Keith’s drawing', () => {
     const state = createSeedState()
     const home = state.hives.filter((hive) => hive.siteId === HOME_YARD)
@@ -507,5 +517,85 @@ describe('reducer', () => {
     })
     expect(unusedForType(state, SHALLOW_BOX)).toBe(20)
     expect(unusedForType(state, DEEP_BOX)).toBe(8)
+  })
+
+  it('lets a full-size hive take three or more deeps and returns them when removed', () => {
+    let state = createSeedState()
+    expect(unusedForType(state, DEEP_BOX)).toBe(8)
+    state = reducer(state, { type: 'set-brood', hiveId: 'hive-yard-1', count: 4 })
+    expect(countRole(state.hives.find((item) => item.id === 'hive-yard-1')!.stack, 'brood')).toBe(4)
+    expect(unusedForType(state, DEEP_BOX)).toBe(5)
+    state = reducer(state, { type: 'set-brood', hiveId: 'hive-yard-1', count: 1 })
+    expect(unusedForType(state, DEEP_BOX)).toBe(8)
+  })
+
+  it('logs sugar syrup in litres without inventing past feedings', () => {
+    let state = createSeedState()
+    const hive = state.hives.find((item) => item.id === 'hive-yard-1')
+    expect(hive?.feedings).toEqual([])
+    state = reducer(state, {
+      type: 'add-feeding',
+      hiveId: 'hive-yard-1',
+      id: 'feed-1',
+      date: '2026-09-02',
+      litres: 2,
+    })
+    expect(state.hives.find((item) => item.id === 'hive-yard-1')?.feedings).toEqual([
+      { id: 'feed-1', date: '2026-09-02', litres: 2 },
+    ])
+    state = reducer(state, {
+      type: 'add-feeding',
+      hiveId: 'hive-yard-1',
+      id: 'feed-bad',
+      date: '2026-09-02',
+      litres: 0,
+    })
+    expect(state.hives.find((item) => item.id === 'hive-yard-1')?.feedings).toHaveLength(1)
+  })
+
+  it('records a split onto an empty pad and leaves the new hive stack empty of boxes', () => {
+    let state = createSeedState()
+    const gap = state.pads.find((pad) => pad.id === 'pad-yard-gap')
+    expect(gap?.occupiedHiveId).toBeNull()
+    state = reducer(state, {
+      type: 'record-split',
+      id: 'split-1',
+      date: '2026-09-02',
+      sourceHiveId: 'hive-yard-1',
+      destPadId: 'pad-yard-gap',
+      newHiveId: 'hive-split-1',
+    })
+    const dest = state.hives.find((item) => item.id === 'hive-split-1')
+    const pad = state.pads.find((item) => item.id === 'pad-yard-gap')
+    expect(dest?.siteId).toBe(HOME_YARD)
+    expect(dest?.padId).toBe('pad-yard-gap')
+    expect(pad?.occupiedHiveId).toBe('hive-split-1')
+    expect(countRole(dest!.stack, 'brood')).toBe(0)
+    expect(state.splits).toHaveLength(1)
+    expect(state.splits[0]).toMatchObject({
+      sourceHiveId: 'hive-yard-1',
+      destHiveId: 'hive-split-1',
+      destPadId: 'pad-yard-gap',
+    })
+  })
+
+  it('adds a named yard without inventing hives or pads', () => {
+    let state = createSeedState()
+    const before = state.sites.length
+    state = reducer(state, { type: 'add-site', id: 'site-new', name: 'Top field' })
+    expect(state.sites).toHaveLength(before + 1)
+    const site = state.sites.find((item) => item.id === 'site-new')
+    expect(site?.name).toBe('Top field')
+    expect(state.hives.filter((hive) => hive.siteId === 'site-new')).toHaveLength(0)
+    expect(state.pads.filter((pad) => pad.siteId === 'site-new')).toHaveLength(0)
+    state = reducer(state, {
+      type: 'add-hive',
+      id: 'hive-tf-1',
+      siteId: 'site-new',
+      kind: 'full-size',
+      x: 40,
+      y: 40,
+    })
+    expect(state.hives.find((item) => item.id === 'hive-tf-1')?.name).toBe('Top field 1')
   })
 })

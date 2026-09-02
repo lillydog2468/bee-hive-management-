@@ -28,6 +28,13 @@ export const L_YARD_SHAPE: Point[] = [
   { x: 6, y: 38 },
 ]
 
+export const L_YARD_GAP_PAD = {
+  id: 'pad-yard-gap',
+  name: 'Yard pad 1',
+  x: 64,
+  y: 24,
+} as const
+
 export const L_YARD_PLACES: Record<
   string,
   { x: number; y: number; brood?: 1 | 2; nucBoxes?: 2 | 3 }
@@ -70,7 +77,7 @@ function hive(
   y: number,
   stack: StackLayer[] = [],
 ): Hive {
-  return { id, name, siteId, kind, stack, x, y, padId: null }
+  return { id, name, siteId, kind, stack, x, y, padId: null, feedings: [] }
 }
 
 function broodAndLid(n: number, brood: 1 | 2): StackLayer[] {
@@ -198,6 +205,7 @@ export function createSeedState(): AppState {
   ]
 
   const pads: Pad[] = [
+    pad(L_YARD_GAP_PAD.id, L_YARD_GAP_PAD.name, HOME_YARD, 'full-size', L_YARD_GAP_PAD.x, L_YARD_GAP_PAD.y),
     pad('pad-garage-nuc-1', 'Nuc pad 1', GARAGE, 'nuc', 16, 32),
     pad('pad-garage-nuc-2', 'Nuc pad 2', GARAGE, 'nuc', 16, 52),
     pad('pad-garage-1', 'Pad 1', GARAGE, 'full-size', 36, 24),
@@ -224,12 +232,13 @@ export function createSeedState(): AppState {
   owned[UNBUILT_SPRING_FRAME] = 50
 
   return {
-    version: 5,
+    version: 6,
     appName: 'Hives',
     equipmentTypes: BUILTIN_TYPES.map((type) => ({ ...type })),
     owned,
     sites,
     hives,
     pads,
+    splits: [],
   }
 }

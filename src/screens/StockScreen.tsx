@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { BOTTOM_BOARD, DEEP_USED_FRAME, INNER_COVER, METAL_LID, SHALLOW_FRAME, UNBUILT_SPRING_FRAME, WAXED_SPRING_FRAME, WOODEN_LID } from '../domain/equipment.ts'
+import { KitThumb } from '../components/KitIllustration.tsx'
 import { Layout } from '../components/Layout.tsx'
+import { PhotoField } from '../components/PhotoField.tsx'
 import { Stepper } from '../components/Stepper.tsx'
 import { inUseCount, isUncountedOnHives, unusedCount } from '../domain/inventory.ts'
 import { useStore } from '../state/context.ts'
 
 export function StockScreen({ typeId }: { typeId: string }) {
-  const { state, dispatch, inUse, go } = useStore()
+  const { state, dispatch, inUse, go, photos, setTypePhoto } = useStore()
   const type = state.equipmentTypes.find((item) => item.id === typeId)
   const [newName, setNewName] = useState('')
   const [editingOwned, setEditingOwned] = useState(false)
@@ -70,11 +72,22 @@ export function StockScreen({ typeId }: { typeId: string }) {
       back={{ label: 'Unused kit', href: '#/unused' }}
     >
       <div className="stat-card">
-        <p className="stat-label">Unused</p>
-        <p className={owned > 0 && unused < 0 ? 'stat-num is-short' : 'stat-num'}>{free}</p>
-        <p className="stat-sub">
-          {owned} owned · {used} on hives
-        </p>
+        <div className="stat-with-thumb">
+          <KitThumb typeId={type.id} photo={photos.types[type.id]} />
+          <div>
+            <p className="stat-label">Unused</p>
+            <p className={owned > 0 && unused < 0 ? 'stat-num is-short' : 'stat-num'}>{free}</p>
+            <p className="stat-sub">
+              {owned} owned · {used} on hives
+            </p>
+          </div>
+        </div>
+        <PhotoField
+          photo={photos.types[type.id]}
+          onChange={(dataUrl) => setTypePhoto(type.id, dataUrl)}
+          onRemove={() => setTypePhoto(type.id, null)}
+          addLabel="Add your photo of this part"
+        />
       </div>
 
       {type.id === BOTTOM_BOARD || type.id === WOODEN_LID ? (

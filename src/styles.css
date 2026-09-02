@@ -258,10 +258,90 @@ ul {
   flex-direction: column;
   gap: 0.15rem;
   min-width: 0;
+  flex: 1;
 }
 
 .kit-name,
 .hive-name {
+  font-weight: 600;
+}
+
+.kit-thumb {
+  width: 3.25rem;
+  height: 3.25rem;
+  flex: none;
+  border-radius: 12px;
+  background: var(--paper-deep);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.kit-thumb img,
+.kit-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.kit-thumb img {
+  object-fit: cover;
+}
+
+.stat-with-thumb {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stat-with-thumb .kit-thumb {
+  width: 4.25rem;
+  height: 4.25rem;
+}
+
+.photo-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.photo-field {
+  position: relative;
+  margin-top: 0.75rem;
+}
+
+.photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.hive-photo {
+  width: 100%;
+  max-height: 14rem;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+}
+
+.log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+}
+
+.log-list li,
+.extra-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--line);
   font-weight: 600;
 }
 
@@ -850,10 +930,10 @@ input:not([type]) {
   font-weight: 600;
 }
 
-.choice-list button span,
-.move-site button span {
-  color: var(--ink-soft);
-  font-weight: 500;
+.choice-list button.is-on,
+.move-site button.is-on {
+  background: color-mix(in srgb, var(--comb) 42%, var(--card));
+  border-color: var(--honey);
 }
 
 .sheet-sub {
@@ -1058,6 +1138,51 @@ input:not([type]) {
   .segment button {
     min-height: 2.75rem;
     padding: 0.7rem 1rem;
+  }
+
+  .stepper-btn {
+    width: 2.85rem;
+    height: 2.85rem;
+    min-width: 2.85rem;
+  }
+
+  .marker.is-full {
+    width: 4.5rem;
+  }
+
+  .marker.is-nuc {
+    width: 3.7rem;
+  }
+
+  .marker.is-full .marker-face {
+    width: 3.15rem;
+    height: 3.15rem;
+  }
+
+  .marker.is-nuc .marker-face,
+  .marker.pad.is-nuc .marker-face {
+    width: 2.65rem;
+    height: 2.65rem;
+  }
+
+  .marker.pad.is-full .marker-face {
+    width: 2.85rem;
+    height: 2.85rem;
+  }
+
+  .pane-map .hive-glyph {
+    width: 2.85rem;
+    height: 2.85rem;
+  }
+
+  .pane-map .hive-glyph.is-nuc {
+    width: 2.2rem;
+    height: 2.2rem;
+  }
+
+  .marker-label {
+    font-size: 0.72rem;
+    max-width: 6.8rem;
   }
 
   .sheet {

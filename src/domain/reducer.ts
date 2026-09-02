@@ -35,7 +35,7 @@ export type Action =
   | { type: 'set-hive-pos'; hiveId: string; x: number; y: number }
   | { type: 'set-pad-pos'; padId: string; x: number; y: number }
   | { type: 'set-shape'; siteId: string; shape: Point[] }
-  | { type: 'set-brood'; hiveId: string; count: 0 | 1 | 2 }
+  | { type: 'set-brood'; hiveId: string; count: number }
   | { type: 'set-supers'; hiveId: string; count: number }
   | { type: 'set-nuc-boxes'; hiveId: string; count: number }
   | {
@@ -69,6 +69,23 @@ export type Action =
     }
   | { type: 'remove-pad'; padId: string }
   | { type: 'place-hive-on-pad'; hiveId: string; padId: string }
+  | {
+      type: 'add-feeding'
+      hiveId: string
+      id: string
+      date: string
+      litres: number
+    }
+  | { type: 'remove-feeding'; hiveId: string; feedingId: string }
+  | {
+      type: 'record-split'
+      id: string
+      date: string
+      sourceHiveId: string
+      destPadId: string
+      newHiveId: string
+    }
+  | { type: 'add-site'; id: string; name: string }
   | { type: 'reset-seed' }
 
 function clamp(value: number, min: number, max: number): number {
@@ -247,7 +264,7 @@ function reduce(state: AppState, action: Action): AppState {
           hive.stack,
           'brood',
           DEEP_BOX_ID,
-          action.count,
+          Math.max(0, Math.round(action.count)),
           ids.layer,
         ),
       }))
@@ -347,7 +364,13 @@ function reduce(state: AppState, action: Action): AppState {
         stack: stackAfterClear(hive, hivePad(state, hive)),
       }))
     case 'add-hive': {
-      const name = defaultHiveName(action.siteId, action.kind, state.hives)
+      const site = state.sites.find((item) => item.id === action.siteId)
+      const name = defaultHiveName(
+        action.siteId,
+        action.kind,
+        state.hives,
+        site?.name,
+      )
       let next: AppState = {
         ...state,
         hives: [
@@ -361,6 +384,7 @@ function reduce(state: AppState, action: Action): AppState {
             x: action.x,
             y: action.y,
             padId: action.padId ?? null,
+            feedings: [],
           },
         ],
       }
@@ -404,6 +428,80 @@ function reduce(state: AppState, action: Action): AppState {
     }
     case 'place-hive-on-pad':
       return occupyPad(state, action.padId, action.hiveId)
+    case 'add-feeding': {
+      const litres = Math.round(action.litres * 100) / 100
+      if (!(litres > 0) || !action.date) return state
+      return withHive(state, action.hiveId, (hive) => ({
+        ...hive,
+        feedings: [
+          ...hive.feedings,
+          { id: action.id, date: action.date, litres },
+        ],
+      }))
+    }
+    case 'remove-feeding':
+      return withHive(state, action.hiveId, (hive) => ({
+        ...hive,
+        feedings: hive.feedings.filter((entry) => entry.id !== action.feedingId),
+      }))
+    case 'record-split': {
+      const source = state.hives.find((hive) => hive.id === action.sourceHiveId)
+      const pad = state.pads.find((item) => item.id === action.destPadId)
+      if (!source || !pad || pad.occupiedHiveId) return state
+      const site = state.sites.find((item) => item.id === pad.siteId)
+      const kind: HiveKind = pad.size === 'nuc' ? 'nuc-4' : 'full-size'
+      let next = reduce(state, {
+        type: 'add-hive',
+        id: action.newHiveId,
+        siteId: pad.siteId,
+        kind,
+        x: pad.x,
+        y: pad.y,
+        padId: pad.id,
+      })
+      const dest = next.hives.find((hive) => hive.id === action.newHiveId)
+      if (!dest) return state
+      return {
+        ...next,
+        splits: [
+          ...next.splits,
+          {
+            id: action.id,
+            date: action.date,
+            sourceHiveId: source.id,
+            sourceName: source.name,
+            destHiveId: dest.id,
+            destName: dest.name,
+            destPadId: pad.id,
+            destSiteId: pad.siteId,
+            destSiteName: site?.name ?? pad.siteId,
+          },
+        ],
+      }
+    }
+    case 'add-site': {
+      const name = action.name.trim()
+      if (!name) return state
+      if (state.sites.some((site) => site.id === action.id)) return state
+      return {
+        ...state,
+        sites: [
+          ...state.sites,
+          {
+            id: action.id,
+            name,
+            summary: 'Add empty pads and drag hives where they sit.',
+            lidTypeId: null,
+            shape: [
+              { x: 10, y: 12 },
+              { x: 90, y: 12 },
+              { x: 90, y: 88 },
+              { x: 10, y: 88 },
+            ],
+          },
+        ],
+      }
+    }
     case 'reset-seed':
       return createSeedState()
   }
