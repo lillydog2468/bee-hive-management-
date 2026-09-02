@@ -36,7 +36,7 @@ export function MoreScreen() {
       <section className="card">
         <h2>Add a kit type</h2>
         <p className="card-copy">
-          Built-in types cover Langstroth boxes, frames, boards, lids and feeders. Add another type only if you need to count it.
+          Built-in types cover Langstroth boxes, frames, boards, lids and feeders. Add another type if you want to count it later.
         </p>
         <a className="secondary link-btn" href="#/kit/new">
           Add a type
@@ -46,7 +46,7 @@ export function MoreScreen() {
       <section className="card">
         <h2>Starting point</h2>
         <p className="card-copy">
-          Replace everything in this browser with the starting point: 20 unused deep boxes, 20 unused shallow boxes, 5 spare metal lids, 2 spare bottom boards, 2 spare inner covers, 50 deep used frames, 50 waxed ready for spring (mixed deep/shallow, no split), 50 unbuilt ready for spring (mix pending more detail), Keith’s L-yard drawing, the garage pads, and the far-side nuc.
+          Replace everything in this browser with the starting point: 20 unused deep boxes, 20 unused shallow boxes, 5 spare metal lids, 2 spare bottom boards, 2 spare inner covers, 50 deep used frames, 50 waxed ready for spring (mixed deep/shallow, no split), 50 unbuilt ready for spring (mix pending more detail), Keith’s L-yard drawing, the garage pads, and the far-side nuc. Types not counted yet stay at 0.
         </p>
         {confirm ? (
           <div className="confirm">

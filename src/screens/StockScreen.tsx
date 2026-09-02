@@ -2,19 +2,27 @@ import { useState } from 'react'
 import { BOTTOM_BOARD, DEEP_USED_FRAME, INNER_COVER, METAL_LID, SHALLOW_FRAME, UNBUILT_SPRING_FRAME, WAXED_SPRING_FRAME, WOODEN_LID } from '../domain/equipment.ts'
 import { Layout } from '../components/Layout.tsx'
 import { Stepper } from '../components/Stepper.tsx'
-import { inUseCount, unusedCount } from '../domain/inventory.ts'
+import { inUseCount, isUncountedOnHives, unusedCount } from '../domain/inventory.ts'
 import { useStore } from '../state/context.ts'
 
 export function StockScreen({ typeId }: { typeId: string }) {
   const { state, dispatch, inUse, go } = useStore()
   const type = state.equipmentTypes.find((item) => item.id === typeId)
   const [newName, setNewName] = useState('')
+  const [editingOwned, setEditingOwned] = useState(false)
+  const [ownedDraft, setOwnedDraft] = useState('')
+  const [draftTypeId, setDraftTypeId] = useState(typeId)
+  if (draftTypeId !== typeId) {
+    setDraftTypeId(typeId)
+    setEditingOwned(false)
+    setOwnedDraft('')
+  }
 
   if (typeId === 'new') {
     return (
       <Layout
         title="Add a type"
-        subtitle="Only add a type you actually own or need to count. Do not duplicate the built-in list."
+        subtitle="Add a type when you want to count it. 0 is fine until you have a number."
         back={{ label: 'Unused kit', href: '#/unused' }}
       >
         <label className="field">
@@ -58,12 +66,12 @@ export function StockScreen({ typeId }: { typeId: string }) {
   return (
     <Layout
       title={type.name}
-      subtitle="Set how many you own. Unused is owned minus what is currently on hive stacks."
+      subtitle="Type how many you own when you have counted. Unused is owned minus what is on hive stacks. 0 means not counted yet."
       back={{ label: 'Unused kit', href: '#/unused' }}
     >
       <div className="stat-card">
         <p className="stat-label">Unused</p>
-        <p className={unused < 0 ? 'stat-num is-short' : 'stat-num'}>{free}</p>
+        <p className={owned > 0 && unused < 0 ? 'stat-num is-short' : 'stat-num'}>{free}</p>
         <p className="stat-sub">
           {owned} owned · {used} on hives
         </p>
@@ -129,18 +137,26 @@ export function StockScreen({ typeId }: { typeId: string }) {
       {type.id === SHALLOW_FRAME ? (
         <div className="banner">
           <p>
-            Shallows in the waxed lot (and any in the unbuilt lot) have not been
-            counted separately. This row stays at 0. It is not a split of the
-            spring lots and not a claim that there are no shallow frames.
+          Shallows in the waxed lot (and any in the unbuilt lot) have not been
+            counted separately. This row stays at 0 until you type a number. It
+            is not a split of the spring lots and not a claim that there are no
+            shallow frames.
           </p>
         </div>
       ) : null}
 
-      {used > owned ? (
-        <div className="banner warn">
+      {isUncountedOnHives(owned, used) ? (
+        <div className="banner">
           <p>
-            {used} are assigned to hives, but owned stock is {owned}. Add stock to
-            match what you actually have — this app does not invent a count for you.
+            {used} are on hives. Owned is still 0 because it has not been
+            counted. Type a number when you have one — this is not a blocker.
+          </p>
+        </div>
+      ) : used > owned ? (
+        <div className="banner">
+          <p>
+            {used} are on hives, and owned is {owned}. Type a different number
+            if that owned count is wrong. The app will not invent one.
           </p>
         </div>
       ) : null}
@@ -149,30 +165,46 @@ export function StockScreen({ typeId }: { typeId: string }) {
         <div className="card-row">
           <div>
             <p className="card-kicker">Owned stock</p>
-            <p className="card-copy">How many of this type you have in total.</p>
+            <p className="card-copy">
+              How many of this type you have in total. Leave 0 until you count.
+            </p>
           </div>
           <Stepper
             label="owned stock"
             value={owned}
+            max={999}
             onChange={(value) =>
               dispatch({ type: 'set-owned', typeId: type.id, owned: value })
             }
           />
         </div>
         <label className="field tight">
-          <span>Or type a number</span>
+          <span>Type a number</span>
           <input
             type="number"
             min={0}
             inputMode="numeric"
-            value={owned}
-            onChange={(event) =>
+            value={editingOwned ? ownedDraft : String(owned)}
+            onFocus={() => {
+              setEditingOwned(true)
+              setOwnedDraft(String(owned))
+            }}
+            onChange={(event) => {
+              const raw = event.target.value
+              setOwnedDraft(raw)
+              if (raw === '') return
+              const next = Number(raw)
+              if (!Number.isFinite(next) || next < 0) return
               dispatch({
                 type: 'set-owned',
                 typeId: type.id,
-                owned: Number(event.target.value) || 0,
+                owned: Math.round(next),
               })
-            }
+            }}
+            onBlur={() => {
+              setEditingOwned(false)
+              setOwnedDraft('')
+            }}
           />
         </label>
       </div>

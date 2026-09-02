@@ -31,6 +31,14 @@ export function shortfallCount(owned: number, inUse: number): number {
   return Math.max(0, inUse - owned)
 }
 
+/**
+ * Kit already on hives with owned still 0. That is “not counted yet”, not a
+ * stock error — do not treat it as a blocker.
+ */
+export function isUncountedOnHives(owned: number, inUse: number): boolean {
+  return owned === 0 && inUse > 0
+}
+
 export function unusedForType(state: AppState, typeId: string): number {
   const inUse = tallyInUse(state.hives)
   return unusedCount(ownedCount(state, typeId), inUseCount(inUse, typeId))

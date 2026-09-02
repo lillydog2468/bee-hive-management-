@@ -14,7 +14,7 @@ import {
   WOODEN_LID,
   YARD_FULL_SIZE_IDS,
 } from './equipment.ts'
-import { inUseCount, tallyInUse, unusedCount, unusedForType } from './inventory.ts'
+import { inUseCount, isUncountedOnHives, tallyInUse, unusedCount, unusedForType } from './inventory.ts'
 import { reducer } from './reducer.ts'
 import { hiveNeedsLidChoice } from './requiredParts.ts'
 import { createSeedState, FAR_SIDE, GARAGE, HOME_YARD, L_YARD_PLACES } from './seed.ts'
@@ -153,6 +153,18 @@ describe('seed', () => {
     expect(tallyInUse(state.hives)[NUC_BOX_5]).toBe(2)
     expect(unusedForType(state, NUC_BOX_5)).toBe(-2)
     expect(unusedForType(state, NUC_BOX_4)).toBe(-17)
+    expect(
+      isUncountedOnHives(
+        state.owned[NUC_BOX_4] ?? 0,
+        tallyInUse(state.hives)[NUC_BOX_4] ?? 0,
+      ),
+    ).toBe(true)
+    expect(
+      isUncountedOnHives(
+        state.owned[NUC_BOX_5] ?? 0,
+        tallyInUse(state.hives)[NUC_BOX_5] ?? 0,
+      ),
+    ).toBe(true)
     expect(hiveNeedsLidChoice(hive!, hivePad(state, hive!))).toBe(true)
   })
 
@@ -181,6 +193,9 @@ describe('unused accounting', () => {
   it('unused is owned minus kit on hive stacks', () => {
     expect(unusedCount(20, 2)).toBe(18)
     expect(unusedCount(0, 2)).toBe(-2)
+    expect(isUncountedOnHives(0, 17)).toBe(true)
+    expect(isUncountedOnHives(17, 17)).toBe(false)
+    expect(isUncountedOnHives(5, 17)).toBe(false)
   })
 
   it('assigning brood removes deeps from unused; clearing returns them', () => {
@@ -382,6 +397,32 @@ describe('reducer', () => {
       on: false,
     })
     expect(unusedForType(state, BOTTOM_BOARD)).toBe(1)
+  })
+
+  it('lets a hive take a bottom even when unused is already 0', () => {
+    let state = createSeedState()
+    state = reducer(state, {
+      type: 'toggle-part',
+      hiveId: 'hive-yard-1',
+      part: 'bottom',
+      on: true,
+    })
+    state = reducer(state, {
+      type: 'toggle-part',
+      hiveId: 'hive-yard-2',
+      part: 'bottom',
+      on: true,
+    })
+    expect(unusedForType(state, BOTTOM_BOARD)).toBe(0)
+    state = reducer(state, {
+      type: 'toggle-part',
+      hiveId: 'hive-yard-3',
+      part: 'bottom',
+      on: true,
+    })
+    expect(tallyInUse(state.hives)[BOTTOM_BOARD]).toBe(3)
+    expect(unusedForType(state, BOTTOM_BOARD)).toBe(-1)
+    expect(isUncountedOnHives(state.owned[BOTTOM_BOARD] ?? 0, 3)).toBe(false)
   })
 
   it('lets a nuc choose a lid without inventing one at seed', () => {

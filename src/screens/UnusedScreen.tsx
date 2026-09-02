@@ -1,27 +1,29 @@
 import {
   BOTTOM_BOARD,
+  DEEP_BOX,
   DEEP_USED_FRAME,
   GROUP_LABELS,
   GROUP_ORDER,
   INNER_COVER,
   METAL_LID,
+  SHALLOW_BOX,
   SHALLOW_FRAME,
   SPRING_FRAME_LOT_IDS,
   UNBUILT_SPRING_FRAME,
   WAXED_SPRING_FRAME,
   WOODEN_LID,
 } from '../domain/equipment.ts'
-import { inUseCount, unusedCount } from '../domain/inventory.ts'
+import {
+  inUseCount,
+  isUncountedOnHives,
+  unusedCount,
+} from '../domain/inventory.ts'
 import type { EquipmentType } from '../domain/types.ts'
 import { Layout } from '../components/Layout.tsx'
 import { useStore } from '../state/context.ts'
 
 export function UnusedScreen() {
   const { state, inUse, go } = useStore()
-  const shortfalls = state.equipmentTypes.filter((type) => {
-    const owned = state.owned[type.id] ?? 0
-    return inUseCount(inUse, type.id) > owned
-  })
   const lockedPads = state.pads.filter((pad) => pad.lockedBottomAndLid)
   const lockedFull = lockedPads.filter((pad) => pad.size === 'full-size').length
   const lockedNuc = lockedPads.filter((pad) => pad.size === 'nuc').length
@@ -30,20 +32,66 @@ export function UnusedScreen() {
   const springLots = SPRING_FRAME_LOT_IDS.map((id) =>
     state.equipmentTypes.find((type) => type.id === id),
   ).filter((type): type is EquipmentType => Boolean(type))
+  const boxes = [DEEP_BOX, SHALLOW_BOX]
+    .map((id) => state.equipmentTypes.find((type) => type.id === id))
+    .filter((type): type is EquipmentType => Boolean(type))
   const featured = new Set<string>([
     METAL_LID,
     BOTTOM_BOARD,
     INNER_COVER,
     DEEP_USED_FRAME,
+    DEEP_BOX,
+    SHALLOW_BOX,
     ...SPRING_FRAME_LOT_IDS,
-    SHALLOW_FRAME,
   ])
+  const rest = state.equipmentTypes.filter((type) => !featured.has(type.id))
+  const onHivesUncounted = rest.filter((type) =>
+    isUncountedOnHives(state.owned[type.id] ?? 0, inUseCount(inUse, type.id)),
+  )
+  const countedShort = rest.filter((type) => {
+    const owned = state.owned[type.id] ?? 0
+    const used = inUseCount(inUse, type.id)
+    return owned > 0 && used > owned
+  })
+  const notCounted = rest.filter((type) => {
+    const owned = state.owned[type.id] ?? 0
+    const used = inUseCount(inUse, type.id)
+    return owned === 0 && used === 0
+  })
+  const leftoverFree = rest.filter((type) => {
+    const owned = state.owned[type.id] ?? 0
+    const used = inUseCount(inUse, type.id)
+    return unusedCount(owned, used) > 0
+  })
 
   return (
     <Layout
       title="Unused kit"
-      subtitle="Owned equipment that is not assigned to a hive stack. This is the number to trust when you want to know what is free."
+      subtitle="What is free: owned minus what is on a hive. Numbers you have not counted yet start at 0 — tap a type and type them in when you are ready."
     >
+      {boxes.length > 0 ? (
+        <section className="group">
+          <p className="spotlight-kicker">Boxes</p>
+          <h2>Deep and shallow</h2>
+          <p className="card-copy">
+            20 deep boxes owned; 12 are on L-yard brood, so 8 are unused. 20
+            unused shallow boxes. Change a number when you count.
+          </p>
+          <ul className="kit-list">
+            {boxes.map((type) => (
+              <KitRow
+                key={type.id}
+                type={type}
+                owned={state.owned[type.id] ?? 0}
+                used={inUseCount(inUse, type.id)}
+                spotlight
+                onOpen={() => go({ page: 'stock', typeId: type.id })}
+              />
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       {metal ? (
         <section className="group">
           <p className="spotlight-kicker">Spare lids</p>
@@ -152,20 +200,83 @@ export function UnusedScreen() {
           </p>
         </div>
       ) : null}
-      {shortfalls.length > 0 ? (
-        <div className="banner warn">
-          <p>
-            {shortfalls.length === 1
-              ? 'One type is on hives but not yet in stock. Add what you actually own.'
-              : `${shortfalls.length} types are on hives but not yet in stock. Add what you actually own.`}
+
+      {onHivesUncounted.length > 0 ? (
+        <section className="group">
+          <p className="spotlight-kicker">On hives</p>
+          <h2>Owned not counted yet</h2>
+          <p className="card-copy">
+            These are already on hives. Owned stock starts at 0 because it has
+            not been counted. That is not a problem — tap a row and type a
+            number when you have one.
           </p>
-        </div>
+          <ul className="kit-list">
+            {onHivesUncounted.map((type) => (
+              <KitRow
+                key={type.id}
+                type={type}
+                owned={state.owned[type.id] ?? 0}
+                used={inUseCount(inUse, type.id)}
+                onOpen={() => go({ page: 'stock', typeId: type.id })}
+              />
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {countedShort.length > 0 ? (
+        <section className="group">
+          <p className="spotlight-kicker">Mismatch</p>
+          <h2>On hives vs owned</h2>
+          <p className="card-copy">
+            More of these sit on hives than the owned number. Type a different
+            owned count if that number is wrong — the app will not invent one.
+          </p>
+          <ul className="kit-list">
+            {countedShort.map((type) => (
+              <KitRow
+                key={type.id}
+                type={type}
+                owned={state.owned[type.id] ?? 0}
+                used={inUseCount(inUse, type.id)}
+                onOpen={() => go({ page: 'stock', typeId: type.id })}
+              />
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {notCounted.length > 0 ? (
+        <section className="group">
+          <p className="spotlight-kicker">Not counted yet</p>
+          <h2>Type a number later</h2>
+          <p className="card-copy">
+            These start at 0. Tap a type when you count it. Exact totals are not
+            needed to use the rest of the app.
+          </p>
+          <ul className="kit-list">
+            {notCounted.map((type) => (
+              <KitRow
+                key={type.id}
+                type={type}
+                owned={state.owned[type.id] ?? 0}
+                used={inUseCount(inUse, type.id)}
+                note={
+                  type.id === SHALLOW_FRAME
+                    ? 'not a split of the spring lots; type a number if you count shallows separately'
+                    : type.id === WOODEN_LID
+                      ? 'garage pad lids stay on those pads; extra unused wooden lids not counted'
+                      : undefined
+                }
+                onOpen={() => go({ page: 'stock', typeId: type.id })}
+              />
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       {GROUP_ORDER.map((group) => {
-        const types = state.equipmentTypes.filter(
-          (type) => type.group === group && !featured.has(type.id),
-        )
+        const types = leftoverFree.filter((type) => type.group === group)
         if (types.length === 0) return null
         return (
           <section key={group} className="group">
@@ -177,15 +288,6 @@ export function UnusedScreen() {
                   type={type}
                   owned={state.owned[type.id] ?? 0}
                   used={inUseCount(inUse, type.id)}
-                  note={
-                    type.id === BOTTOM_BOARD
-                      ? 'on every hive; spare count not given. garage pad bottoms stay on those pads'
-                      : type.id === INNER_COVER
-                        ? 'on every hive; spare count not given'
-                        : type.id === WOODEN_LID
-                          ? 'garage pad lids stay on those pads and cannot be used elsewhere'
-                          : undefined
-                  }
                   onOpen={() => go({ page: 'stock', typeId: type.id })}
                 />
               ))}
@@ -195,8 +297,8 @@ export function UnusedScreen() {
       })}
 
       <p className="footnote">
-        Tap a type to add or adjust stock. Assigning kit to a hive takes it out of
-        unused; taking it off a hive returns it.
+        Tap a type to type or step the owned count. Assigning kit to a hive
+        takes it out of unused; taking it off a hive returns it.
       </p>
       <a className="secondary link-btn" href="#/kit/new">
         Add a type
@@ -222,8 +324,11 @@ function KitRow({
 }) {
   const unused = unusedCount(owned, used)
   const free = Math.max(0, unused)
+  const uncounted = isUncountedOnHives(owned, used)
+  const short = owned > 0 && used > owned
   const extras = [
-    used > owned ? `short by ${used - owned}` : '',
+    uncounted ? 'owned not counted yet' : '',
+    short ? `short by ${used - owned}` : '',
     note ?? '',
   ].filter(Boolean)
   return (
@@ -242,11 +347,13 @@ function KitRow({
         </span>
         <span
           className={
-            unused < 0
+            short
               ? 'kit-count is-short'
-              : free > 0
-                ? 'kit-count is-free'
-                : 'kit-count'
+              : uncounted
+                ? 'kit-count is-uncounted'
+                : free > 0
+                  ? 'kit-count is-free'
+                  : 'kit-count'
           }
         >
           {free}

@@ -157,14 +157,14 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         <p className="card-copy">
           Every hive needs a bottom board, an inner cover and a lid. Two spare
           bottoms and two spare inner covers sit in Unused — they are not
-          auto-assigned. Once on a hive they cannot be turned off.
+          auto-assigned. You can put one on now even if you have not counted
+          every board yet. Once on a hive they cannot be turned off.
         </p>
         {needsBottom ? (
           <div className="lid-needed">
             <p>
-              <strong>Bottom board</strong> — required. Assign one of the two
-              spare unused boards, or add to owned stock first. Garage pad
-              bottoms stay on those pads.
+              <strong>Bottom board</strong> — required. Put one on this hive
+              from Unused. Garage pad bottoms stay on those pads.
             </p>
             <div className="segment">
               <button
@@ -178,7 +178,7 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
                   })
                 }
               >
-                Use a spare bottom board
+                Put a bottom board on this hive
               </button>
             </div>
           </div>
@@ -197,8 +197,8 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         {needsInner ? (
           <div className="lid-needed">
             <p>
-              <strong>Inner cover</strong> — required. Assign one of the two
-              spare unused covers, or add to owned stock first.
+              <strong>Inner cover</strong> — required. Put one on this hive
+              from Unused.
             </p>
             <div className="segment">
               <button
@@ -212,7 +212,7 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
                   })
                 }
               >
-                Use a spare inner cover
+                Put an inner cover on this hive
               </button>
             </div>
           </div>
@@ -227,9 +227,8 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         {needsLid ? (
           <div className="lid-needed">
             <p>
-              <strong>Lid</strong> — required. No lid type is recorded for this
-              hive. Choose metal or wooden. Garage wooden lids stay on those pads
-              and cannot be used here.
+              <strong>Lid</strong> — required. Choose metal or wooden. Garage
+              wooden lids stay on those pads and cannot be used here.
             </p>
             <div className="segment">
               <button

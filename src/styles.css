@@ -262,6 +262,10 @@ ul {
   color: var(--warn);
 }
 
+.kit-count.is-uncounted {
+  color: var(--ink-soft);
+}
+
 .kit-count:not(.is-free):not(.is-short) {
   color: var(--ink-soft);
 }

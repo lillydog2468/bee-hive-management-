@@ -82,8 +82,9 @@ export function HiveStack({
       {missingRequired ? (
         <p className="stack-caption">
           Every hive needs a bottom board, an inner cover and a lid. Spare
-          bottoms and covers are in Unused until you assign them. Garage wooden
-          lids stay on those pads.
+          bottoms and covers are in Unused until you put them on. You can
+          assign them without counting every board first. Garage wooden lids
+          stay on those pads.
         </p>
       ) : padLocked && onlyRequired ? (
         <p className="stack-caption">

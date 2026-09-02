@@ -25,7 +25,7 @@ There is no login and no server. Everything is stored in this browser’s `local
 
 ## Starting point
 
-The first visit seeds only what was given:
+The first visit seeds the facts we have. Exact inventory counts are not important yet — types Keith has not counted start at **0**, and he can type a real number later.
 
 - **Unused kit:** 20 deep boxes (12 on L-yard brood, **8 unused**), 20 shallow boxes. **5 spare metal lids** (12 owned: 7 on the L-yard full-size hives). **2 spare bottom boards** and **2 spare inner covers** — not auto-assigned onto hives. Frames: **50 deep used**; **50 new waxed, ready for spring** (some deep and some shallow, one lot of 50, no invented split); **50 unbuilt, ready for spring** (still a mix, more detail pending, no invented split). Every other type starts at 0 owned.
 - **Home yard:** Keith’s L-shaped drawing (top arm, downward arm on the right). Map glyphs: `|` / `||` / `|||` for nuc 1/2/3 boxes; empty square for large 1-box; nested squares for large 2-box. Along the L: three 3-box nucs, two 1-box larges, gap, three 2-box larges; down the right: 2-box nuc, two 2-box larges, two 3-box nucs. L-yard nucs are 4-frame. Metal lids on the seven full-size hives. Markers drag as the yard changes.
@@ -40,10 +40,10 @@ Unused = owned stock minus kit currently assigned to a hive stack. Garage pad bo
 
 Every hive needs a bottom board, an inner cover and a lid. The hive screen will not let you turn those off once assigned. Two spare bottoms and two spare inner covers sit in Unused; they are not auto-placed on the L-yard hives. Garage pad bottoms and wooden lids are **not** unused stock.
 
-- Add or adjust owned stock by type.
+- Add or adjust owned stock by type (stepper or type a number). 0 means not counted yet.
 - Assigning kit to a hive takes it out of unused.
 - Taking kit off a hive, or removing the hive, returns it.
-- If a hive already has kit that has not been added to stock (the far-side nuc boxes start this way; bottoms and inner covers do too), unused stays 0 for that type and the row notes a shortfall so you can add what you actually own.
+- Kit already on hives with owned still 0 (the 4-frame and 5-frame nuc boxes start this way) is **not counted yet**, not a blocker. Tap the row and type a number when you have one.
 
 You can add further types later. Built-in types: deep box, shallow box, 4-frame nuc box, 5-frame nuc box, deep used frames, waxed ready for spring (mixed, no subtype counts), unbuilt ready for spring (mix pending more detail), shallow frames (not a split of the spring lots), bottom board, inner cover, metal lid, wooden lid, round feeder, feeding jar.
 

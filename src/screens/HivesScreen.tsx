@@ -3,7 +3,11 @@ import { Layout } from '../components/Layout.tsx'
 import { METAL_LID } from '../domain/equipment.ts'
 import { hiveMapBoxCount, nucLinesFollowPath } from '../domain/mapGlyph.ts'
 import { hiveKindLabel } from '../domain/names.ts'
-import { hiveNeedsLidChoice } from '../domain/requiredParts.ts'
+import {
+  hiveNeedsBottom,
+  hiveNeedsInnerCover,
+  hiveNeedsLidChoice,
+} from '../domain/requiredParts.ts'
 import { hasLockedBottomAndLid, hivePad } from '../domain/siteLocked.ts'
 import { countRole } from '../domain/stack.ts'
 import { useStore } from '../state/context.ts'
@@ -51,6 +55,8 @@ export function HivesScreen() {
                   } else if (nucs > 0) {
                     bits.push(`${nucs} nuc box${nucs === 1 ? '' : 'es'}`)
                   }
+                  if (hiveNeedsBottom(hive, pad)) bits.push('Needs a bottom')
+                  if (hiveNeedsInnerCover(hive)) bits.push('Needs an inner cover')
                   if (hiveNeedsLidChoice(hive, pad)) bits.push('Needs a lid')
                   const detail = bits.length > 0 ? bits.join(' · ') : 'Stack not set'
                   return (
