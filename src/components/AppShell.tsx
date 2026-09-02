@@ -22,7 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setPinnedSiteId(null)
   }
   const mapSiteId = pinnedSiteId ?? derivedSiteId
-  const showMap = wide && route.page !== 'more'
+  const showMap = route.page !== 'more'
 
   const active =
     route.page === 'site' || route.page === 'sites'

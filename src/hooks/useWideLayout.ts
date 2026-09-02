@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 /** Laptop and iPad landscape — not the phone column. */
-export const WIDE_QUERY = '(min-width: 56rem)'
+export const WIDE_QUERY = '(min-width: 900px)'
 
 export function useWideLayout(): boolean {
   const [wide, setWide] = useState(() =>
