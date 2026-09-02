@@ -118,7 +118,7 @@ export const BUILTIN_TYPES: EquipmentType[] = [
 
 export const GROUP_LABELS: Record<EquipmentGroup, string> = {
   boxes: 'Boxes',
-  frames: 'Frames by condition',
+  frames: 'Frames',
   parts: 'Hive parts',
   feeding: 'Feeding',
   custom: 'Other types',
