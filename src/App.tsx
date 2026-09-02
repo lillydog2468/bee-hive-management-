@@ -1,5 +1,7 @@
 import { StoreProvider } from './state/Store.tsx'
 import { useStore } from './state/context.ts'
+import { AppShell } from './components/AppShell.tsx'
+import { useWideLayout } from './hooks/useWideLayout.ts'
 import { HiveScreen } from './screens/HiveScreen.tsx'
 import { HivesScreen } from './screens/HivesScreen.tsx'
 import { MoreScreen } from './screens/MoreScreen.tsx'
@@ -10,6 +12,7 @@ import { UnusedScreen } from './screens/UnusedScreen.tsx'
 
 function Routes() {
   const { route } = useStore()
+  const wide = useWideLayout()
   switch (route.page) {
     case 'unused':
       return <UnusedScreen />
@@ -18,7 +21,11 @@ function Routes() {
     case 'sites':
       return <SitesScreen />
     case 'site':
-      return <SiteMapScreen siteId={route.siteId} />
+      return wide ? (
+        <HivesScreen siteId={route.siteId} />
+      ) : (
+        <SiteMapScreen siteId={route.siteId} />
+      )
     case 'hives':
       return <HivesScreen />
     case 'hive':
@@ -31,7 +38,9 @@ function Routes() {
 export default function App() {
   return (
     <StoreProvider>
-      <Routes />
+      <AppShell>
+        <Routes />
+      </AppShell>
     </StoreProvider>
   )
 }

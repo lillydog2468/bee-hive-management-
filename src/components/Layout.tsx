@@ -1,12 +1,6 @@
 import type { ReactNode } from 'react'
 import { useStore } from '../state/context.ts'
 
-const TABS = [
-  { page: 'unused' as const, label: 'Unused', hash: '#/unused' },
-  { page: 'sites' as const, label: 'Sites', hash: '#/sites' },
-  { page: 'hives' as const, label: 'Hives', hash: '#/hives' },
-]
-
 export function Layout({
   title,
   subtitle,
@@ -20,15 +14,7 @@ export function Layout({
   children: ReactNode
   actions?: ReactNode
 }) {
-  const { route, state } = useStore()
-  const active =
-    route.page === 'site' || route.page === 'sites'
-      ? 'sites'
-      : route.page === 'hive' || route.page === 'hives'
-        ? 'hives'
-        : route.page === 'more'
-          ? 'more'
-          : 'unused'
+  const { state } = useStore()
 
   return (
     <div className="shell">
@@ -41,7 +27,7 @@ export function Layout({
           ) : (
             <p className="eyebrow">{state.appName}</p>
           )}
-          <a className="more-link" href="#/more" aria-label="More">
+          <a className="more-link nav-more-phone" href="#/more" aria-label="More">
             More
           </a>
         </div>
@@ -52,18 +38,6 @@ export function Layout({
         {subtitle ? <p className="lede">{subtitle}</p> : null}
       </header>
       <main className="main">{children}</main>
-      <nav className="tabbar" aria-label="Primary">
-        {TABS.map((tab) => (
-          <a
-            key={tab.page}
-            href={tab.hash}
-            className={active === tab.page ? 'tab is-active' : 'tab'}
-            aria-current={active === tab.page ? 'page' : undefined}
-          >
-            {tab.label}
-          </a>
-        ))}
-      </nav>
     </div>
   )
 }

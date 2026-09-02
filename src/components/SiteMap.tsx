@@ -20,6 +20,7 @@ export function SiteMap({
   hives,
   pads,
   editShape,
+  selectedHiveId = null,
   onMoveHive,
   onMovePad,
   onMoveVertex,
@@ -30,6 +31,7 @@ export function SiteMap({
   hives: Hive[]
   pads: Pad[]
   editShape: boolean
+  selectedHiveId?: string | null
   onMoveHive: (hiveId: string, x: number, y: number) => void
   onMovePad: (padId: string, x: number, y: number) => void
   onMoveVertex: (index: number, point: Point) => void
@@ -130,7 +132,9 @@ export function SiteMap({
         <button
           key={hive.id}
           type="button"
-          className={`marker hive ${hive.kind === 'full-size' ? 'is-full' : 'is-nuc'}`}
+          className={`marker hive ${hive.kind === 'full-size' ? 'is-full' : 'is-nuc'}${
+            selectedHiveId === hive.id ? ' is-selected' : ''
+          }`}
           style={{ left: `${hive.x}%`, top: `${hive.y}%` }}
           aria-label={`${hive.name}, ${hiveKindLabel(hive.kind)}`}
           onPointerDown={(event) => onPointerDown(event, 'hive', hive.id)}

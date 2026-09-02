@@ -12,21 +12,32 @@ import { hasLockedBottomAndLid, hivePad } from '../domain/siteLocked.ts'
 import { countRole } from '../domain/stack.ts'
 import { useStore } from '../state/context.ts'
 
-export function HivesScreen() {
+export function HivesScreen({ siteId }: { siteId?: string }) {
   const { state, go } = useStore()
+  const sites = siteId
+    ? state.sites.filter((site) => site.id === siteId)
+    : state.sites
+  const focused = siteId
+    ? state.sites.find((site) => site.id === siteId)
+    : undefined
 
   return (
     <Layout
-      title="Hives"
-      subtitle="Every hive and nuc, grouped by site. Empty pads live on the site aerials, not here."
+      title={focused ? focused.name : 'Hives'}
+      subtitle={
+        focused
+          ? focused.summary
+          : 'Every hive and nuc, grouped by site. Empty pads live on the site aerials, not here.'
+      }
+      back={focused ? { label: 'Sites', href: '#/sites' } : undefined}
     >
-      {state.sites.map((site) => {
+      {sites.map((site) => {
         const hives = state.hives.filter((hive) => hive.siteId === site.id)
         return (
           <section key={site.id} className="group">
             <div className="group-head">
               <h2>{site.name}</h2>
-              <a href={`#/sites/${site.id}`}>Aerial</a>
+              {focused ? null : <a href={`#/sites/${site.id}`}>Aerial</a>}
             </div>
             {hives.length === 0 ? (
               <p className="empty">No hives on this site. Empty pads, if any, are on the aerial.</p>
