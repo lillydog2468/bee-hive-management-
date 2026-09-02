@@ -4,6 +4,10 @@ A phone-friendly tracker for Keith Dudman’s Langstroth kit and hives. The poin
 
 Working title: Hives (rename it under More).
 
+## Use it in a browser
+
+Open **https://lillydog2468.github.io/bee-hive-management-/** on a phone or laptop. There is no login. Data stays in that browser’s `localStorage`.
+
 ## Run locally
 
 ```bash
@@ -11,7 +15,7 @@ npm install
 npm run dev
 ```
 
-Open the address Vite prints, usually `http://localhost:5173`. Use it in a phone browser, or narrow the desktop window.
+The app is built for GitHub Pages, so Vite serves it at `/bee-hive-management-/`. Open the address Vite prints, usually `http://localhost:5173/bee-hive-management-/`. Use it in a phone browser, or narrow the desktop window.
 
 Other commands:
 
