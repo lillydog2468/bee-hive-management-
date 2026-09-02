@@ -1,4 +1,4 @@
-import { GROUP_LABELS, GROUP_ORDER } from '../domain/equipment.ts'
+import { BOTTOM_BOARD, GROUP_LABELS, GROUP_ORDER, WOODEN_LID } from '../domain/equipment.ts'
 import { inUseCount, unusedCount } from '../domain/inventory.ts'
 import { Layout } from '../components/Layout.tsx'
 import { useStore } from '../state/context.ts'
@@ -9,12 +9,26 @@ export function UnusedScreen() {
     const owned = state.owned[type.id] ?? 0
     return inUseCount(inUse, type.id) > owned
   })
+  const lockedPads = state.pads.filter((pad) => pad.lockedBottomAndLid)
+  const lockedFull = lockedPads.filter((pad) => pad.size === 'full-size').length
+  const lockedNuc = lockedPads.filter((pad) => pad.size === 'nuc').length
 
   return (
     <Layout
       title="Unused kit"
       subtitle="Owned equipment that is not assigned to a hive stack. This is the number to trust when you want to know what is free."
     >
+      {lockedPads.length > 0 ? (
+        <div className="banner">
+          <p>
+            Above the garage, each of the {lockedFull} full-size pad
+            {lockedFull === 1 ? '' : 's'} and {lockedNuc} nuc pad
+            {lockedNuc === 1 ? '' : 's'} has its own bottom board and wooden lid.
+            Those stay on that site. They are not unused kit, and they cannot go on
+            the L-yard or the far-side hive.
+          </p>
+        </div>
+      ) : null}
       {shortfalls.length > 0 ? (
         <div className="banner warn">
           <p>
@@ -49,6 +63,9 @@ export function UnusedScreen() {
                         <span className="kit-meta">
                           {owned} owned · {used} on hives
                           {used > owned ? ` · short by ${used - owned}` : ''}
+                          {type.id === BOTTOM_BOARD || type.id === WOODEN_LID
+                            ? ' · garage pad pieces not counted here'
+                            : ''}
                         </span>
                       </span>
                       <span

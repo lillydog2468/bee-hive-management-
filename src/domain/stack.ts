@@ -121,3 +121,11 @@ export function addExtra(
 export function removeLayer(stack: StackLayer[], layerId: string): StackLayer[] {
   return stack.filter((layer) => layer.id !== layerId)
 }
+
+/** Drop unused-pool bottoms and lids so a garage pad's own kit can take their place. */
+export function stripPoolBottomAndLid(stack: StackLayer[]): StackLayer[] {
+  return stack.filter(
+    (layer) =>
+      !layer.siteLocked && layer.role !== 'bottom' && layer.role !== 'lid',
+  )
+}

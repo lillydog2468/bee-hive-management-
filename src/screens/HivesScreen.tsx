@@ -28,6 +28,12 @@ export function HivesScreen() {
                   const supers = countRole(hive.stack, 'super')
                   const nucs = countRole(hive.stack, 'nuc-box')
                   let detail = 'Stack not set'
+                  if (hive.padId) {
+                    const pad = state.pads.find((item) => item.id === hive.padId)
+                    if (pad?.lockedBottomAndLid && hive.stack.length === 0) {
+                      detail = 'Pad bottom and wooden lid · stack not set'
+                    }
+                  }
                   if (hive.kind === 'full-size' && hive.stack.length > 0) {
                     const bits = []
                     if (brood) bits.push(`${brood} brood`)

@@ -5,6 +5,7 @@ import { Sheet } from '../components/Sheet.tsx'
 import { Stepper } from '../components/Stepper.tsx'
 import { METAL_LID, WOODEN_LID } from '../domain/equipment.ts'
 import { hiveKindLabel } from '../domain/names.ts'
+import { displayStack, hasLockedBottomAndLid, hivePad } from '../domain/siteLocked.ts'
 import { countRole, hasRole, readingFeeding } from '../domain/stack.ts'
 import type { FeedingConfig } from '../domain/types.ts'
 import { useStore } from '../state/context.ts'
@@ -28,11 +29,14 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
   }
 
   const site = state.sites.find((item) => item.id === hive.siteId)
+  const pad = hivePad(state, hive)
+  const lockedPad = hasLockedBottomAndLid(pad)
+  const shown = displayStack(hive, pad)
   const brood = countRole(hive.stack, 'brood')
   const supers = countRole(hive.stack, 'super')
   const nucBoxes = countRole(hive.stack, 'nuc-box')
   const feeding = readingFeeding(hive.stack)
-  const lid = hive.stack.find((layer) => layer.role === 'lid')
+  const lid = shown.find((layer) => layer.role === 'lid')
   const extras = hive.stack.filter((layer) => layer.role === 'extra')
 
   function setFeeding(next: FeedingConfig | null) {
@@ -65,7 +69,7 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         </button>
       }
     >
-      <HiveStack stack={hive.stack} types={state.equipmentTypes} />
+      <HiveStack stack={shown} types={state.equipmentTypes} />
 
       {hive.kind === 'full-size' ? (
         <section className="card stack-card">
@@ -131,7 +135,9 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         <h2>Parts</h2>
         <ToggleRow
           label="Bottom board"
-          on={hasRole(hive.stack, 'bottom')}
+          on={lockedPad || hasRole(hive.stack, 'bottom')}
+          locked={lockedPad}
+          lockNote="This pad’s bottom board stays here. It is not unused kit."
           onToggle={(on) =>
             dispatch({ type: 'toggle-part', hiveId: hive.id, part: 'bottom', on })
           }
@@ -150,19 +156,23 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         />
         <ToggleRow
           label={
-            lid
-              ? lid.typeId === METAL_LID
-                ? 'Lid (metal)'
-                : lid.typeId === WOODEN_LID
-                  ? 'Lid (wooden)'
-                  : 'Lid'
-              : site?.lidTypeId === METAL_LID
-                ? 'Lid (metal on this site)'
-                : site?.lidTypeId === WOODEN_LID
-                  ? 'Lid (wooden on this site)'
-                  : 'Lid (type not set for this site)'
+            lockedPad
+              ? 'Lid (wooden, stays on this pad)'
+              : lid
+                ? lid.typeId === METAL_LID
+                  ? 'Lid (metal)'
+                  : lid.typeId === WOODEN_LID
+                    ? 'Lid (wooden)'
+                    : 'Lid'
+                : site?.lidTypeId === METAL_LID
+                  ? 'Lid (metal on this site)'
+                  : site?.lidTypeId === WOODEN_LID
+                    ? 'Lid (wooden on this site)'
+                    : 'Lid (type not set for this site)'
           }
           on={Boolean(lid)}
+          locked={lockedPad}
+          lockNote="This pad’s wooden lid stays here. It cannot be used on the L-yard or the far-side hive."
           onToggle={(on) => {
             if (!on) {
               dispatch({ type: 'toggle-part', hiveId: hive.id, part: 'lid', on: false })
@@ -308,7 +318,7 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
             type="button"
             onClick={() => dispatch({ type: 'clear-stack', hiveId: hive.id })}
           >
-            Return all kit to unused
+            Return unused-pool kit
           </button>
         ) : null}
         <button className="danger-text" type="button" onClick={() => setConfirmRemove(true)}>
@@ -379,7 +389,9 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
 
       {moveOpen ? (
         <Sheet title="Move hive" onClose={() => setMoveOpen(false)}>
-          <p className="sheet-lede">Kit stays on the hive. Unused counts do not change.</p>
+          <p className="sheet-lede">
+            Unused-pool kit stays on the hive. A garage pad’s bottom board and wooden lid stay on that pad.
+          </p>
           <div className="choice-list">
             {state.sites.map((item) => {
               const emptyPads = state.pads.filter(
@@ -424,7 +436,9 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
       {extraOpen ? (
         <Sheet title="Add kit to this hive" onClose={() => setExtraOpen(false)}>
           <div className="choice-list">
-            {state.equipmentTypes.map((type) => (
+            {state.equipmentTypes
+              .filter((type) => type.id !== 'bottom-board' && type.id !== 'wooden-lid')
+              .map((type) => (
               <button
                 key={type.id}
                 type="button"
@@ -448,7 +462,7 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
       {confirmRemove ? (
         <Sheet title="Remove hive?" onClose={() => setConfirmRemove(false)}>
           <p className="sheet-lede">
-            Kit on this stack returns to unused. The marker is removed from the aerial.
+            Unused-pool kit on this stack returns to unused. A garage pad’s bottom board and wooden lid stay on the pad.
           </p>
           <button
             className="danger"
@@ -470,17 +484,25 @@ function ToggleRow({
   label,
   on,
   onToggle,
+  locked = false,
+  lockNote,
 }: {
   label: string
   on: boolean
   onToggle: (on: boolean) => void
+  locked?: boolean
+  lockNote?: string
 }) {
   return (
-    <label className="toggle-row">
-      <span>{label}</span>
+    <label className={locked ? 'toggle-row is-locked' : 'toggle-row'}>
+      <span>
+        {label}
+        {locked && lockNote ? <span className="lock-note">{lockNote}</span> : null}
+      </span>
       <input
         type="checkbox"
         checked={on}
+        disabled={locked}
         onChange={(event) => onToggle(event.target.checked)}
       />
     </label>

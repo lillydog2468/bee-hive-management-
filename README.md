@@ -29,14 +29,15 @@ The first visit seeds only what was given:
 
 - **Unused kit:** 20 deep boxes (10-frame) and 20 shallow boxes (10-frame). Every other type starts at 0 owned.
 - **Home yard:** L-shaped aerial with 7 full-size hives (Yard 1–7) and 6 four-frame nucs (Yard nuc 1–6). Their stacks are empty, so the 20+20 stay unused until a stack is set. Metal lids are the site default when you add a lid; none are assigned yet.
-- **Above the garage:** 8 empty full-size pads and 2 empty nuc pads on the left. Wooden lids are the site default. No occupied hives.
+- **Above the garage:** 8 empty full-size pads and 2 empty nuc pads on the left. Each of those pads has its own bottom board and wooden lid. They stay on that site, even while the pads are empty, and they do not appear in Unused. No extra bottoms or lids are counted beyond those pads. No occupied hives.
 - **Far side of the house:** one 5-frame nuc named Far side nuc, with two 5-frame nuc boxes (10 frames). No lid type is recorded for this site.
 
 Hive names are temporary and can be renamed. Marker positions on the aerials are a simple default you can drag; they are not surveyed positions.
 
 ## Unused kit
 
-Unused = owned stock minus kit currently assigned to a hive stack.
+Unused = owned stock minus kit currently assigned to a hive stack. Garage pad bottoms and wooden lids are **not** unused stock: they belong to those pads only and cannot be put on the L-yard or the far-side hive.
+
 
 - Add or adjust owned stock by type.
 - Assigning kit to a hive takes it out of unused.
@@ -47,7 +48,7 @@ You can add further types later. The built-in list is only: deep box, shallow bo
 
 ## Hives and stacks
 
-Hives belong to a site. On a full-size hive you can set 1 or 2 deep brood chambers, add or remove shallow honey supers, toggle bottom board / inner cover / lid, and turn on summer feeding (empty box + round feeder or jar + extra body). Nucs count nuc boxes. Move a hive between sites, including onto an empty garage pad.
+Hives belong to a site. On a full-size hive you can set 1 or 2 deep brood chambers, add or remove shallow honey supers, toggle bottom board / inner cover / lid, and turn on summer feeding (empty box + round feeder or jar + extra body). Nucs count nuc boxes. Move a hive between sites, including onto an empty garage pad — that pad’s bottom board and wooden lid stay on the pad.
 
 ## Aerials
 

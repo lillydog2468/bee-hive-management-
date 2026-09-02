@@ -48,7 +48,16 @@ function pad(
   x: number,
   y: number,
 ): Pad {
-  return { id, name, siteId, size, x, y, occupiedHiveId: null }
+  return {
+    id,
+    name,
+    siteId,
+    size,
+    x,
+    y,
+    occupiedHiveId: null,
+    lockedBottomAndLid: siteId === GARAGE,
+  }
 }
 
 export function createSeedState(): AppState {
@@ -63,7 +72,7 @@ export function createSeedState(): AppState {
     {
       id: GARAGE,
       name: 'Above the garage',
-      summary: 'Wooden lids. Empty pads on the left-hand side.',
+      summary: 'Each pad keeps its own bottom board and wooden lid. Empty pads on the left-hand side.',
       lidTypeId: 'wooden-lid',
       shape: GARAGE_SHAPE.map((p) => ({ ...p })),
     },
@@ -117,7 +126,7 @@ export function createSeedState(): AppState {
   owned[SHALLOW_BOX] = 20
 
   return {
-    version: 1,
+    version: 2,
     appName: 'Hives',
     equipmentTypes: BUILTIN_TYPES.map((type) => ({ ...type })),
     owned,

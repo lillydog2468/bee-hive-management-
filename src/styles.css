@@ -764,6 +764,22 @@ input:not([type]) {
   margin-bottom: 0.45rem;
 }
 
+.lock-note {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--ink-soft);
+  margin-top: 0.15rem;
+}
+
+.toggle-row.is-locked input {
+  opacity: 0.55;
+}
+
+.banner:not(.warn) {
+  background: color-mix(in srgb, var(--grass-fill) 35%, var(--card));
+}
+
 .confirm {
   display: flex;
   flex-direction: column;

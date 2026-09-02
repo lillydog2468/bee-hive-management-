@@ -22,6 +22,7 @@ export function HiveStack({
   types: EquipmentType[]
 }) {
   const names = new Map(types.map((type) => [type.id, type.shortName]))
+  const movable = stack.filter((layer) => !layer.siteLocked)
   if (stack.length === 0) {
     return (
       <div className="stack is-empty">
@@ -47,6 +48,9 @@ export function HiveStack({
               {ROLE_LABEL[layer.role] ?? 'Kit'}
             </span>
             <span className="layer-type">{names.get(layer.typeId) ?? layer.typeId}</span>
+            {layer.siteLocked ? (
+              <span className="feeder-chip">Stays on this pad</span>
+            ) : null}
             {feeding && feeder ? (
               <span className="feeder-chip">
                 {names.get(feeder.typeId) ?? feeder.typeId}
@@ -55,7 +59,13 @@ export function HiveStack({
           </div>
         )
       })}
-      <p className="stack-caption">Top of hive ↑ · Bottom of hive ↓</p>
+      {movable.length === 0 ? (
+        <p className="stack-caption">
+          This pad’s bottom board and wooden lid stay here. Unused-pool boxes are not assigned yet.
+        </p>
+      ) : (
+        <p className="stack-caption">Top of hive ↑ · Bottom of hive ↓</p>
+      )}
     </div>
   )
 }

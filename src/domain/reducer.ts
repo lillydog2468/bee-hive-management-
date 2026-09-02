@@ -1,11 +1,13 @@
 import { nucBoxType } from './equipment.ts'
 import { defaultHiveName, defaultPadName } from './names.ts'
 import { createSeedState } from './seed.ts'
+import { hasLockedBottomAndLid, hivePad } from './siteLocked.ts'
 import {
   addExtra,
   removeLayer,
   setFeeding,
   setRoleCount,
+  stripPoolBottomAndLid,
   toggleRole,
 } from './stack.ts'
 import type {
@@ -107,6 +109,9 @@ function occupyPad(state: AppState, padId: string, hiveId: string): AppState {
     x: pad.x,
     y: pad.y,
     padId,
+    stack: pad.lockedBottomAndLid
+      ? stripPoolBottomAndLid(hive.stack)
+      : hive.stack,
   }))
 }
 
@@ -263,6 +268,13 @@ export function reducer(state: AppState, action: Action): AppState {
       })
     case 'toggle-part':
       return withHive(state, action.hiveId, (hive) => {
+        const pad = hivePad(state, hive)
+        if (
+          hasLockedBottomAndLid(pad) &&
+          (action.part === 'bottom' || action.part === 'lid')
+        ) {
+          return hive
+        }
         if (action.part === 'bottom') {
           return {
             ...hive,
@@ -357,6 +369,7 @@ export function reducer(state: AppState, action: Action): AppState {
             x: action.x,
             y: action.y,
             occupiedHiveId: null,
+            lockedBottomAndLid: false,
           },
         ],
       }

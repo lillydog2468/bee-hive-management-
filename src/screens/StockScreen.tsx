@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BOTTOM_BOARD, WOODEN_LID } from '../domain/equipment.ts'
 import { Layout } from '../components/Layout.tsx'
 import { Stepper } from '../components/Stepper.tsx'
 import { inUseCount, unusedCount } from '../domain/inventory.ts'
@@ -67,6 +68,17 @@ export function StockScreen({ typeId }: { typeId: string }) {
           {owned} owned · {used} on hives
         </p>
       </div>
+
+      {type.id === BOTTOM_BOARD || type.id === WOODEN_LID ? (
+        <div className="banner">
+          <p>
+            Bottom boards and wooden lids on the garage pads stay with those pads.
+            They are not this unused stock, and they cannot be moved to the L-yard or
+            the far-side hive. Only add a number here if you own extra pieces besides
+            those pads.
+          </p>
+        </div>
+      ) : null}
 
       {used > owned ? (
         <div className="banner warn">

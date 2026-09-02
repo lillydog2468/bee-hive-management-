@@ -4,6 +4,7 @@ export function tallyInUse(hives: Hive[]): Record<string, number> {
   const tally: Record<string, number> = {}
   for (const hive of hives) {
     for (const layer of hive.stack) {
+      if (layer.siteLocked) continue
       tally[layer.typeId] = (tally[layer.typeId] ?? 0) + 1
     }
   }

@@ -98,7 +98,9 @@ export function SiteMapScreen({ siteId }: { siteId: string }) {
 
       {addOpen ? (
         <Sheet title="Add to this site" onClose={() => setAddOpen(false)}>
-          <p className="sheet-lede">Hives occupy kit when you set a stack. Pads are empty places you can drop a hive onto later.</p>
+          <p className="sheet-lede">
+            Hives occupy unused-pool kit when you set a stack. Garage pads keep their own bottom board and wooden lid, even when empty. Extra pads you add here do not invent more bottoms or lids.
+          </p>
           <div className="choice-list">
             <button type="button" onClick={() => addHive('full-size')}>
               Full-size hive
@@ -125,7 +127,11 @@ export function SiteMapScreen({ siteId }: { siteId: string }) {
           onClose={() => setPadId(null)}
         >
           <p className="sheet-lede">
-            Empty {padSizeLabel(openPad.size).toLowerCase()}. Place a hive here, move one across, or remove the pad.
+            Empty {padSizeLabel(openPad.size).toLowerCase()}.
+            {openPad.lockedBottomAndLid
+              ? ' This pad already has a bottom board and wooden lid. They stay here even while the pad is empty, and they are not unused kit.'
+              : ''}{' '}
+            Place a hive here, move one across, or remove the pad.
           </p>
           <div className="choice-list">
             <button type="button" onClick={() => addHive('full-size', openPad.id)}>

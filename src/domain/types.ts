@@ -35,6 +35,8 @@ export type StackLayer = {
   id: string
   typeId: string
   role: LayerRole
+  /** Pad-owned kit that never enters the unused pool. */
+  siteLocked?: boolean
 }
 
 export type Site = {
@@ -64,10 +66,12 @@ export type Pad = {
   x: number
   y: number
   occupiedHiveId: string | null
+  /** This pad owns a bottom board and wooden lid that stay on this site. */
+  lockedBottomAndLid: boolean
 }
 
 export type AppState = {
-  version: 1
+  version: 2
   appName: string
   equipmentTypes: EquipmentType[]
   owned: Record<string, number>
