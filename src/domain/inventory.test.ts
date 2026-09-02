@@ -73,7 +73,7 @@ describe('seed', () => {
     }
   })
 
-  it('tracks three frame lots by condition and does not invent shallow counts', () => {
+  it('tracks deep used frames and two mixed spring lots without inventing a split', () => {
     const state = createSeedState()
     expect(state.owned[DEEP_USED_FRAME]).toBe(50)
     expect(state.owned[WAXED_SPRING_FRAME]).toBe(50)

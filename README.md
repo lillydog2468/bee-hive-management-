@@ -27,7 +27,7 @@ There is no login and no server. Everything is stored in this browser’s `local
 
 The first visit seeds only what was given:
 
-- **Unused kit:** 20 deep boxes and 20 shallow boxes. **5 spare metal lids** (12 owned: 7 on the L-yard full-size hives, 5 unused). Frames by condition: 50 deep used, 50 waxed ready for spring, 50 unbuilt ready for spring — the last two are not assumed deep or shallow. Shallow frames have no count given (0). Spare bottom boards and inner covers have no count given (owned 0). Every other type starts at 0 owned.
+- **Unused kit:** 20 deep boxes and 20 shallow boxes. **5 spare metal lids** (12 owned: 7 on the L-yard full-size hives, 5 unused). Frames: **50 deep used**; **50 waxed, ready for spring** and **50 unbuilt, ready for spring** (each a mix of deep and shallow — the split has not been given). Spare bottom boards and inner covers have no count given (owned 0). Every other type starts at 0 owned.
 - **Home yard:** L-shaped aerial with 7 full-size hives (Yard 1–7) and 6 four-frame nucs (Yard nuc 1–6). Hives and kit can be moved around — nothing is glued to a pad. Each full-size hive has a bottom board, an inner cover and a metal lid. Each nuc has a bottom board and an inner cover; lid type is not recorded, so you choose metal or wooden in the hive screen. Brood and supers are not set, so the 20+20 boxes stay unused.
 - **Above the garage:** 8 empty full-size pads and 2 empty nuc pads on the left. Each of those pads has its own bottom board and wooden lid. They stay on that site, even while the pads are empty, they do not appear in Unused, and they cannot be used on the L-yard or the far-side hive. No extra bottoms or lids are counted beyond those pads. No occupied hives.
 - **Far side of the house:** one 5-frame nuc named Far side nuc, with a bottom board, an inner cover, and two 5-frame nuc boxes (10 frames). No lid type is recorded.
@@ -45,7 +45,7 @@ Every hive needs a bottom board, an inner cover and a lid. Those in-use pieces a
 - Taking kit off a hive, or removing the hive, returns it.
 - If a hive already has kit that has not been added to stock (the far-side nuc boxes start this way; bottoms and inner covers do too), unused stays 0 for that type and the row notes a shortfall so you can add what you actually own.
 
-You can add further types later. Built-in types: deep box, shallow box, 4-frame nuc box, 5-frame nuc box, deep used frames, waxed ready for spring, unbuilt ready for spring, shallow frames, bottom board, inner cover, metal lid, wooden lid, round feeder, feeding jar.
+You can add further types later. Built-in types: deep box, shallow box, 4-frame nuc box, 5-frame nuc box, deep used frames, waxed ready for spring, unbuilt ready for spring, shallow frames (awaiting the spring-lot split), bottom board, inner cover, metal lid, wooden lid, round feeder, feeding jar.
 
 ## Hives and stacks
 

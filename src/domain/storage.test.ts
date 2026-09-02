@@ -27,7 +27,7 @@ describe('storage migrate', () => {
     expect(unusedForType(next!, METAL_LID)).toBe(5)
   })
 
-  it('assigns seven L-yard metal lids and the three frame lots when upgrading older data', () => {
+  it('assigns seven L-yard metal lids and the frame lots when upgrading older data', () => {
     const seed = createSeedState()
     const v2 = {
       ...seed,

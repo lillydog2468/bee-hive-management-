@@ -1,11 +1,12 @@
 import {
   BOTTOM_BOARD,
-  FRAME_CONDITION_IDS,
+  DEEP_USED_FRAME,
   GROUP_LABELS,
   GROUP_ORDER,
   INNER_COVER,
   METAL_LID,
   SHALLOW_FRAME,
+  SPRING_FRAME_LOT_IDS,
   WOODEN_LID,
 } from '../domain/equipment.ts'
 import { inUseCount, unusedCount } from '../domain/inventory.ts'
@@ -23,10 +24,16 @@ export function UnusedScreen() {
   const lockedFull = lockedPads.filter((pad) => pad.size === 'full-size').length
   const lockedNuc = lockedPads.filter((pad) => pad.size === 'nuc').length
   const metal = state.equipmentTypes.find((type) => type.id === METAL_LID)
-  const frameLots = FRAME_CONDITION_IDS.map((id) =>
+  const usedFrames = state.equipmentTypes.find((type) => type.id === DEEP_USED_FRAME)
+  const springLots = SPRING_FRAME_LOT_IDS.map((id) =>
     state.equipmentTypes.find((type) => type.id === id),
   ).filter((type): type is EquipmentType => Boolean(type))
-  const featured = new Set<string>([METAL_LID, ...FRAME_CONDITION_IDS])
+  const featured = new Set<string>([
+    METAL_LID,
+    DEEP_USED_FRAME,
+    ...SPRING_FRAME_LOT_IDS,
+    SHALLOW_FRAME,
+  ])
 
   return (
     <Layout
@@ -54,23 +61,41 @@ export function UnusedScreen() {
         </section>
       ) : null}
 
-      {frameLots.length > 0 ? (
+      {usedFrames ? (
         <section className="group">
-          <p className="spotlight-kicker">Frames by condition</p>
-          <h2>Three lots</h2>
+          <p className="spotlight-kicker">Used frames</p>
+          <h2>Deep used</h2>
+          <p className="card-copy">These 50 are deep. The spring lots below are a mix, not more deeps.</p>
+          <ul className="kit-list">
+            <KitRow
+              type={usedFrames}
+              owned={state.owned[usedFrames.id] ?? 0}
+              used={inUseCount(inUse, usedFrames.id)}
+              spotlight
+              onOpen={() => go({ page: 'stock', typeId: usedFrames.id })}
+            />
+          </ul>
+        </section>
+      ) : null}
+
+      {springLots.length > 0 ? (
+        <section className="group">
+          <p className="spotlight-kicker">Ready for spring</p>
+          <h2>Two lots</h2>
           <p className="card-copy">
-            Counted by condition, not as one pile. 50 deep used. 50 waxed, ready
-            for spring. 50 unbuilt, ready for spring. The last two were not named
-            as deep or shallow.
+            50 waxed and 50 unbuilt. Each lot is a mix of deep and shallow. The
+            split has not been given, so they stay as two lots — not as all deep
+            and not as invented deep/shallow counts.
           </p>
           <ul className="kit-list">
-            {frameLots.map((type) => (
+            {springLots.map((type) => (
               <KitRow
                 key={type.id}
                 type={type}
                 owned={state.owned[type.id] ?? 0}
                 used={inUseCount(inUse, type.id)}
                 spotlight
+                note="mix of deep and shallow; split not given"
                 onOpen={() => go({ page: 'stock', typeId: type.id })}
               />
             ))}
@@ -121,9 +146,7 @@ export function UnusedScreen() {
                         ? 'on every hive; spare count not given'
                         : type.id === WOODEN_LID
                           ? 'garage pad lids stay on those pads and cannot be used elsewhere'
-                          : type.id === SHALLOW_FRAME
-                            ? 'no shallow count given'
-                            : undefined
+                          : undefined
                   }
                   onOpen={() => go({ page: 'stock', typeId: type.id })}
                 />

@@ -130,6 +130,12 @@ export const FRAME_CONDITION_IDS = [
   UNBUILT_SPRING_FRAME,
 ] as const
 
+/** Waxed and unbuilt lots are a mix of deep and shallow; the split is not given. */
+export const SPRING_FRAME_LOT_IDS = [
+  WAXED_SPRING_FRAME,
+  UNBUILT_SPRING_FRAME,
+] as const
+
 export const YARD_FULL_SIZE_IDS = [
   'hive-yard-1',
   'hive-yard-2',

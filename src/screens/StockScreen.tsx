@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BOTTOM_BOARD, FRAME_CONDITION_IDS, INNER_COVER, METAL_LID, SHALLOW_FRAME, WOODEN_LID } from '../domain/equipment.ts'
+import { BOTTOM_BOARD, DEEP_USED_FRAME, INNER_COVER, METAL_LID, SHALLOW_FRAME, SPRING_FRAME_LOT_IDS, WOODEN_LID } from '../domain/equipment.ts'
 import { Layout } from '../components/Layout.tsx'
 import { Stepper } from '../components/Stepper.tsx'
 import { inUseCount, unusedCount } from '../domain/inventory.ts'
@@ -102,19 +102,29 @@ export function StockScreen({ typeId }: { typeId: string }) {
         </div>
       ) : null}
 
-      {(FRAME_CONDITION_IDS as readonly string[]).includes(type.id) ? (
+      {type.id === DEEP_USED_FRAME ? (
+        <div className="banner">
+          <p>These 50 are deep used frames. The waxed and unbuilt spring lots are a mix, not more deeps.</p>
+        </div>
+      ) : null}
+
+      {(SPRING_FRAME_LOT_IDS as readonly string[]).includes(type.id) ? (
         <div className="banner">
           <p>
-            Frames are counted by condition, not as one pile. 50 deep used, 50
-            waxed ready for spring, 50 unbuilt ready for spring. Only the used lot
-            was named as deep. The other two were not named as deep or shallow.
+            This lot is a mix of deep and shallow frames, ready for spring. The
+            split has not been given, so it stays as one count of 50 — not all
+            deep, and not invented deep versus shallow numbers.
           </p>
         </div>
       ) : null}
 
       {type.id === SHALLOW_FRAME ? (
         <div className="banner">
-          <p>No shallow frame count has been given, so this starts at 0.</p>
+          <p>
+            Shallows in the waxed and unbuilt spring lots have not been split
+            out. This row stays at 0 until those numbers arrive. It is not a
+            claim that there are no shallow frames.
+          </p>
         </div>
       ) : null}
 
