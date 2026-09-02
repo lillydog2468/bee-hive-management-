@@ -1,8 +1,4 @@
-import {
-  BOTTOM_BOARD,
-  INNER_COVER,
-  METAL_LID,
-} from './equipment.ts'
+import { METAL_LID } from './equipment.ts'
 import { HOME_YARD } from './seed.ts'
 import { hasLockedBottomAndLid } from './siteLocked.ts'
 import {
@@ -30,6 +26,18 @@ export function hiveNeedsLidChoice(
 ): boolean {
   if (hasLockedBottomAndLid(pad)) return false
   return !hasRole(hive.stack, 'lid')
+}
+
+export function hiveNeedsBottom(
+  hive: Hive,
+  pad: Pad | undefined,
+): boolean {
+  if (hasLockedBottomAndLid(pad)) return false
+  return !hasRole(hive.stack, 'bottom')
+}
+
+export function hiveNeedsInnerCover(hive: Hive): boolean {
+  return !hasRole(hive.stack, 'inner-cover')
 }
 
 export function canRemoveLayer(
@@ -66,20 +74,6 @@ export function ensureHiveRequiredParts(
   }
 
   const add: StackLayer[] = []
-  if (!locked && !hasRole(stack, 'bottom')) {
-    add.push({
-      id: `${hive.id}:bottom`,
-      typeId: BOTTOM_BOARD,
-      role: 'bottom',
-    })
-  }
-  if (!hasRole(stack, 'inner-cover')) {
-    add.push({
-      id: `${hive.id}:inner-cover`,
-      typeId: INNER_COVER,
-      role: 'inner-cover',
-    })
-  }
   if (!locked && hiveShouldHaveMetalLid(hive, pad) && !hasRole(stack, 'lid')) {
     add.push({
       id: `${hive.id}:lid`,

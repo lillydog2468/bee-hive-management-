@@ -46,7 +46,7 @@ export function MoreScreen() {
       <section className="card">
         <h2>Starting point</h2>
         <p className="card-copy">
-          Replace everything in this browser with the starting point: 20 unused deep boxes, 20 unused shallow boxes, 5 spare metal lids (7 more on the L-yard full-size hives), 50 deep used frames, two spring lots of 50 (waxed / unbuilt, mix of deep and shallow), bottoms and inner covers on every hive (spare counts not given), the three sites, and stacks only where they were given.
+          Replace everything in this browser with the starting point: 20 unused deep boxes, 20 unused shallow boxes, 5 spare metal lids, 2 spare bottom boards, 2 spare inner covers, 50 deep used frames, two spring lots of 50 (waxed / unbuilt, mix of deep and shallow), Keith’s L-yard drawing, the garage pads, and the far-side nuc.
         </p>
         {confirm ? (
           <div className="confirm">

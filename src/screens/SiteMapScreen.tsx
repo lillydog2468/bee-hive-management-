@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { HiveGlyph } from '../components/HiveGlyph.tsx'
 import { Layout } from '../components/Layout.tsx'
 import { Sheet } from '../components/Sheet.tsx'
 import { SiteMap } from '../components/SiteMap.tsx'
+import { HOME_YARD } from '../domain/seed.ts'
 import { hiveKindLabel, padSizeLabel } from '../domain/names.ts'
 import type { HiveKind, PadSize } from '../domain/types.ts'
 import { useStore } from '../state/context.ts'
@@ -76,8 +78,33 @@ export function SiteMapScreen({ siteId }: { siteId: string }) {
       {editShape ? (
         <p className="hint">Drag the corners of the outline. The home yard starts as an L you can change as the ground changes.</p>
       ) : (
-        <p className="hint">Hold and drag a marker. A short tap opens it.</p>
+        <p className="hint">Hold and drag a marker. A short tap opens it. Glyphs follow Keith’s key.</p>
       )}
+
+      {site.id === HOME_YARD ? (
+        <ul className="map-key" aria-label="Map key">
+          <li>
+            <HiveGlyph kind="nuc-4" boxCount={1} />
+            <span>Nuc 1 box</span>
+          </li>
+          <li>
+            <HiveGlyph kind="nuc-4" boxCount={2} />
+            <span>Nuc 2 box</span>
+          </li>
+          <li>
+            <HiveGlyph kind="nuc-4" boxCount={3} />
+            <span>Nuc 3 box</span>
+          </li>
+          <li>
+            <HiveGlyph kind="full-size" boxCount={1} />
+            <span>Large 1 box</span>
+          </li>
+          <li>
+            <HiveGlyph kind="full-size" boxCount={2} />
+            <span>Large 2 box</span>
+          </li>
+        </ul>
+      ) : null}
 
       <SiteMap
         site={site}

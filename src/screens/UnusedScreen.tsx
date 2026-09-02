@@ -30,6 +30,8 @@ export function UnusedScreen() {
   ).filter((type): type is EquipmentType => Boolean(type))
   const featured = new Set<string>([
     METAL_LID,
+    BOTTOM_BOARD,
+    INNER_COVER,
     DEEP_USED_FRAME,
     ...SPRING_FRAME_LOT_IDS,
     SHALLOW_FRAME,
@@ -60,6 +62,33 @@ export function UnusedScreen() {
           </ul>
         </section>
       ) : null}
+
+      <section className="group">
+        <p className="spotlight-kicker">Spare boards</p>
+        <h2>Bottoms and inner covers</h2>
+        <p className="card-copy">
+          2 spare bottom boards and 2 spare inner covers. They are not
+          auto-assigned onto the L-yard hives. Every hive still needs both;
+          assigning one takes it out of unused. Garage pad bottoms stay on those
+          pads.
+        </p>
+        <ul className="kit-list">
+          {[BOTTOM_BOARD, INNER_COVER].map((id) => {
+            const type = state.equipmentTypes.find((item) => item.id === id)
+            if (!type) return null
+            return (
+              <KitRow
+                key={type.id}
+                type={type}
+                owned={state.owned[type.id] ?? 0}
+                used={inUseCount(inUse, type.id)}
+                spotlight
+                onOpen={() => go({ page: 'stock', typeId: type.id })}
+              />
+            )
+          })}
+        </ul>
+      </section>
 
       {usedFrames ? (
         <section className="group">

@@ -1,5 +1,7 @@
 import { useRef, type PointerEvent as ReactPointerEvent } from 'react'
 import { hiveKindLabel, padSizeLabel } from '../domain/names.ts'
+import { HiveGlyph } from './HiveGlyph.tsx'
+import { hiveMapBoxCount, nucLinesFollowPath } from '../domain/mapGlyph.ts'
 import type { Hive, Pad, Point, Site } from '../domain/types.ts'
 
 type DragKind = 'hive' | 'pad' | 'vertex'
@@ -136,7 +138,12 @@ export function SiteMap({
           onPointerUp={(event) => onPointerUp(event, 'hive', hive.id)}
         >
           <span className="marker-face">
-            <span className="frames" data-kind={hive.kind} />
+            <HiveGlyph
+              kind={hive.kind}
+              boxCount={hiveMapBoxCount(hive)}
+              rotate={nucLinesFollowPath(hive)}
+              title={`${hive.name}, ${hiveKindLabel(hive.kind)}`}
+            />
           </span>
           <span className="marker-label">{hive.name}</span>
         </button>

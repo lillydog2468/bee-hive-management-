@@ -20,14 +20,19 @@ export function HiveStack({
   stack,
   types,
   missingLid = false,
+  missingBottom = false,
+  missingInner = false,
 }: {
   stack: StackLayer[]
   types: EquipmentType[]
   missingLid?: boolean
+  missingBottom?: boolean
+  missingInner?: boolean
 }) {
   const names = new Map(types.map((type) => [type.id, type.shortName]))
   const movable = stack.filter((layer) => !layer.siteLocked)
-  if (stack.length === 0 && !missingLid) {
+  const missingRequired = missingLid || missingBottom || missingInner
+  if (stack.length === 0 && !missingRequired) {
     return (
       <div className="stack is-empty">
         <p>No kit assigned. Unused counts stay as they are until you set a stack.</p>
@@ -41,7 +46,7 @@ export function HiveStack({
     movable.length > 0 &&
     movable.every((layer) => REQUIRED_ROLES.has(layer.role))
   const padLocked = stack.some((layer) => layer.siteLocked)
-  const onlyPadKit = movable.length === 0 && padLocked && !missingLid
+  const onlyPadKit = movable.length === 0 && padLocked && !missingRequired
 
   return (
     <div className="stack" aria-label="Hive stack, bottom to top">
@@ -74,10 +79,11 @@ export function HiveStack({
           </div>
         )
       })}
-      {missingLid ? (
+      {missingRequired ? (
         <p className="stack-caption">
-          Every hive needs a bottom board, an inner cover and a lid. Choose a lid
-          type — garage wooden lids stay on those pads.
+          Every hive needs a bottom board, an inner cover and a lid. Spare
+          bottoms and covers are in Unused until you assign them. Garage wooden
+          lids stay on those pads.
         </p>
       ) : padLocked && onlyRequired ? (
         <p className="stack-caption">

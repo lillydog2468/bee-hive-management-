@@ -1,13 +1,21 @@
 import {
+  BOTTOM_BOARD,
   BUILTIN_TYPES,
   DEEP_USED_FRAME,
+  INNER_COVER,
   METAL_LID,
   UNBUILT_SPRING_FRAME,
   WAXED_SPRING_FRAME,
   YARD_FULL_SIZE_IDS,
 } from './equipment.ts'
-import { createSeedState, GARAGE } from './seed.ts'
 import { ensureRequiredParts } from './requiredParts.ts'
+import {
+  applyLYardDrawing,
+  createSeedState,
+  GARAGE,
+  HOME_YARD,
+  L_YARD_SHAPE,
+} from './seed.ts'
 import type { AppState, EquipmentType, Hive, Pad, StackLayer } from './types.ts'
 
 const STORAGE_KEY = 'hives.v1'
@@ -72,6 +80,21 @@ function withYardMetalLids(hives: Hive[]): Hive[] {
   })
 }
 
+function withHomeYardShape(
+  sites: AppState['sites'],
+): AppState['sites'] {
+  return sites.map((site) =>
+    site.id === HOME_YARD
+      ? {
+          ...site,
+          shape: L_YARD_SHAPE.map((p) => ({ ...p })),
+          summary:
+            'L-shaped apiary from Keith’s drawing. Drag markers as the yard changes. Metal lids on the seven full-size hives.',
+        }
+      : site,
+  )
+}
+
 function applyV3(parsed: LooseState): AppState {
   const pads = parsed.pads.map(migratePad)
   const equipmentTypes = mergeTypes(parsed.equipmentTypes ?? [])
@@ -84,7 +107,7 @@ function applyV3(parsed: LooseState): AppState {
   owned[DEEP_USED_FRAME] = 50
   owned[WAXED_SPRING_FRAME] = 50
   owned[UNBUILT_SPRING_FRAME] = 50
-  return toV4({
+  return toV5({
     ...parsed,
     version: 3,
     equipmentTypes,
@@ -94,22 +117,34 @@ function applyV3(parsed: LooseState): AppState {
   })
 }
 
-function toV4(
+function toV5(
   state: Omit<AppState, 'version'> & { version: number },
 ): AppState {
-  return { ...ensureRequiredParts({ ...state, version: 4 }), version: 4 }
+  const owned = { ...state.owned }
+  owned[BOTTOM_BOARD] = 2
+  owned[INNER_COVER] = 2
+  const next: AppState = {
+    ...state,
+    version: 5,
+    owned,
+    sites: withHomeYardShape(state.sites),
+    hives: applyLYardDrawing(state.hives),
+    pads: state.pads,
+  }
+  return { ...ensureRequiredParts(next), version: 5 }
 }
 
 export function migrateState(parsed: LooseState): AppState | null {
   if (!Array.isArray(parsed.hives) || !Array.isArray(parsed.pads)) return null
-  if (parsed.version === 4) {
-    return toV4({
+  if (parsed.version === 5) {
+    return ensureRequiredParts({
       ...parsed,
+      version: 5,
       pads: parsed.pads.map(migratePad),
     })
   }
-  if (parsed.version === 3) {
-    return toV4({
+  if (parsed.version === 3 || parsed.version === 4) {
+    return toV5({
       ...parsed,
       pads: parsed.pads.map(migratePad),
     })

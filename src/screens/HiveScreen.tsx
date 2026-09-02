@@ -6,11 +6,13 @@ import { Stepper } from '../components/Stepper.tsx'
 import { METAL_LID, WOODEN_LID } from '../domain/equipment.ts'
 import { hiveKindLabel } from '../domain/names.ts'
 import {
+  hiveNeedsBottom,
+  hiveNeedsInnerCover,
   hiveNeedsLidChoice,
   hiveShouldHaveMetalLid,
 } from '../domain/requiredParts.ts'
 import { displayStack, hasLockedBottomAndLid, hivePad } from '../domain/siteLocked.ts'
-import { countRole, hasRole, readingFeeding } from '../domain/stack.ts'
+import { countRole, readingFeeding } from '../domain/stack.ts'
 import type { FeedingConfig } from '../domain/types.ts'
 import { useStore } from '../state/context.ts'
 
@@ -42,6 +44,8 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
   const lid = shown.find((layer) => layer.role === 'lid')
   const extras = hive.stack.filter((layer) => layer.role === 'extra')
   const needsLid = hiveNeedsLidChoice(hive, pad)
+  const needsBottom = hiveNeedsBottom(hive, pad)
+  const needsInner = hiveNeedsInnerCover(hive)
   const metalLidLocked = hiveShouldHaveMetalLid(hive, pad)
   const hasReturnableKit = hive.stack.some(
     (layer) =>
@@ -84,6 +88,8 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         stack={shown}
         types={state.equipmentTypes}
         missingLid={needsLid}
+        missingBottom={needsBottom}
+        missingInner={needsInner}
       />
 
       {hive.kind === 'full-size' ? (
@@ -149,25 +155,75 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
       <section className="card">
         <h2>Parts</h2>
         <p className="card-copy">
-          Every hive needs a bottom board, an inner cover and a lid. They cannot
-          be turned off.
+          Every hive needs a bottom board, an inner cover and a lid. Two spare
+          bottoms and two spare inner covers sit in Unused — they are not
+          auto-assigned. Once on a hive they cannot be turned off.
         </p>
-        <ToggleRow
-          label="Bottom board"
-          on={lockedPad || hasRole(hive.stack, 'bottom')}
-          locked
-          lockNote={
-            lockedPad
-              ? 'This pad’s bottom board stays here. It is not unused kit, and it cannot be used on the L-yard or the far-side hive.'
-              : 'Required on every hive. Spare count has not been given, so unused stays 0.'
-          }
-        />
-        <ToggleRow
-          label="Inner cover"
-          on={hasRole(hive.stack, 'inner-cover')}
-          locked
-          lockNote="Required on every hive. Spare count has not been given, so unused stays 0."
-        />
+        {needsBottom ? (
+          <div className="lid-needed">
+            <p>
+              <strong>Bottom board</strong> — required. Assign one of the two
+              spare unused boards, or add to owned stock first. Garage pad
+              bottoms stay on those pads.
+            </p>
+            <div className="segment">
+              <button
+                type="button"
+                onClick={() =>
+                  dispatch({
+                    type: 'toggle-part',
+                    hiveId: hive.id,
+                    part: 'bottom',
+                    on: true,
+                  })
+                }
+              >
+                Use a spare bottom board
+              </button>
+            </div>
+          </div>
+        ) : (
+          <ToggleRow
+            label="Bottom board"
+            on
+            locked
+            lockNote={
+              lockedPad
+                ? 'This pad’s bottom board stays here. It is not unused kit, and it cannot be used on the L-yard or the far-side hive.'
+                : 'Required on every hive. Taken from unused when you assigned it.'
+            }
+          />
+        )}
+        {needsInner ? (
+          <div className="lid-needed">
+            <p>
+              <strong>Inner cover</strong> — required. Assign one of the two
+              spare unused covers, or add to owned stock first.
+            </p>
+            <div className="segment">
+              <button
+                type="button"
+                onClick={() =>
+                  dispatch({
+                    type: 'toggle-part',
+                    hiveId: hive.id,
+                    part: 'inner-cover',
+                    on: true,
+                  })
+                }
+              >
+                Use a spare inner cover
+              </button>
+            </div>
+          </div>
+        ) : (
+          <ToggleRow
+            label="Inner cover"
+            on
+            locked
+            lockNote="Required on every hive. Taken from unused when you assigned it."
+          />
+        )}
         {needsLid ? (
           <div className="lid-needed">
             <p>

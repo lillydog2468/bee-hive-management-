@@ -1,5 +1,7 @@
+import { HiveGlyph } from '../components/HiveGlyph.tsx'
 import { Layout } from '../components/Layout.tsx'
 import { METAL_LID } from '../domain/equipment.ts'
+import { hiveMapBoxCount, nucLinesFollowPath } from '../domain/mapGlyph.ts'
 import { hiveKindLabel } from '../domain/names.ts'
 import { hiveNeedsLidChoice } from '../domain/requiredParts.ts'
 import { hasLockedBottomAndLid, hivePad } from '../domain/siteLocked.ts'
@@ -58,7 +60,13 @@ export function HivesScreen() {
                         className="hive-row"
                         onClick={() => go({ page: 'hive', hiveId: hive.id })}
                       >
-                        <span className={`hive-icon ${hive.kind === 'full-size' ? 'is-full' : 'is-nuc'}`} />
+                        <span className="hive-icon-wrap">
+                          <HiveGlyph
+                            kind={hive.kind}
+                            boxCount={hiveMapBoxCount(hive)}
+                            rotate={nucLinesFollowPath(hive)}
+                          />
+                        </span>
                         <span>
                           <span className="hive-name">{hive.name}</span>
                           <span className="hive-meta">

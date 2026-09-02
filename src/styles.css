@@ -531,36 +531,82 @@ input:not([type]) {
 .marker-face {
   width: 2.35rem;
   height: 2.35rem;
-  border-radius: 8px;
-  background: var(--comb);
-  border: 1.5px solid var(--ink);
-  box-shadow: 0 2px 0 var(--comb-dark);
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
   display: grid;
   place-items: center;
+  color: var(--ink);
 }
 
 .marker.is-nuc .marker-face {
-  width: 1.7rem;
-  height: 1.35rem;
-  border-radius: 5px;
+  width: 1.85rem;
+  height: 1.85rem;
 }
 
 .marker.pad .marker-face {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 8px;
   background: transparent;
   border: 1.5px dashed var(--grass-stroke);
   box-shadow: none;
 }
 
-.frames {
+.hive-glyph {
+  width: 2.1rem;
+  height: 2.1rem;
   display: block;
-  width: 70%;
-  height: 70%;
-  background: repeating-linear-gradient(
-    90deg,
-    transparent 0 2px,
-    var(--wood) 2px 3px
-  );
-  opacity: 0.55;
+  color: var(--ink);
+}
+
+.hive-glyph.is-nuc {
+  width: 1.55rem;
+  height: 1.55rem;
+}
+
+.hive-glyph.is-along-path {
+  transform: rotate(90deg);
+}
+
+.hive-icon-wrap {
+  width: 2.1rem;
+  height: 2.1rem;
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+}
+
+.hive-icon-wrap .hive-glyph {
+  width: 1.85rem;
+  height: 1.85rem;
+}
+
+.map-key {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.7rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.85rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.map-key li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.map-key .hive-glyph {
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 .marker-label {

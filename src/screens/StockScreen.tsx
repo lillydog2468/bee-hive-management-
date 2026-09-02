@@ -77,7 +77,7 @@ export function StockScreen({ typeId }: { typeId: string }) {
             the far-side hive. Only add a number here if you own extra pieces besides
             those pads.
             {type.id === BOTTOM_BOARD
-              ? ' Every hive also needs a bottom board. Spare unused bottoms stay at 0 until a count is given.'
+              ? ' Two spare unused bottom boards. They are not auto-assigned onto the L-yard hives.'
               : ''}
           </p>
         </div>
@@ -86,8 +86,8 @@ export function StockScreen({ typeId }: { typeId: string }) {
       {type.id === INNER_COVER ? (
         <div className="banner">
           <p>
-            Every hive needs an inner cover. How many spare ones you own has not
-            been given, so unused stays 0 until you add a number.
+            Every hive needs an inner cover. Two spare unused covers sit in
+            Unused. They are not auto-assigned onto the L-yard hives.
           </p>
         </div>
       ) : null}

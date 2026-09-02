@@ -5,26 +5,47 @@ import {
   DEEP_USED_FRAME,
   INNER_COVER,
   METAL_LID,
+  NUC_BOX_4,
   NUC_BOX_5,
   SHALLOW_BOX,
   UNBUILT_SPRING_FRAME,
   WAXED_SPRING_FRAME,
 } from './equipment.ts'
-import { sortStack } from './stack.ts'
+import { setRoleCount, sortStack } from './stack.ts'
 import type { AppState, Hive, Pad, Point, Site, StackLayer } from './types.ts'
 
 export const HOME_YARD = 'home-yard'
 export const GARAGE = 'garage'
 export const FAR_SIDE = 'far-side'
 
-const L_YARD_SHAPE: Point[] = [
-  { x: 8, y: 8 },
-  { x: 92, y: 8 },
-  { x: 92, y: 42 },
-  { x: 40, y: 42 },
-  { x: 40, y: 92 },
-  { x: 8, y: 92 },
+/** Top bar, downward arm on the right — Keith’s L-shaped apiary drawing. */
+export const L_YARD_SHAPE: Point[] = [
+  { x: 6, y: 10 },
+  { x: 94, y: 10 },
+  { x: 94, y: 92 },
+  { x: 64, y: 92 },
+  { x: 64, y: 38 },
+  { x: 6, y: 38 },
 ]
+
+export const L_YARD_PLACES: Record<
+  string,
+  { x: number; y: number; brood?: 1 | 2; nucBoxes?: 2 | 3 }
+> = {
+  'hive-yard-nuc-1': { x: 12, y: 24, nucBoxes: 3 },
+  'hive-yard-nuc-2': { x: 22, y: 24, nucBoxes: 3 },
+  'hive-yard-nuc-3': { x: 32, y: 24, nucBoxes: 3 },
+  'hive-yard-1': { x: 44, y: 24, brood: 1 },
+  'hive-yard-2': { x: 54, y: 24, brood: 1 },
+  'hive-yard-3': { x: 74, y: 24, brood: 2 },
+  'hive-yard-4': { x: 84, y: 24, brood: 2 },
+  'hive-yard-5': { x: 92, y: 24, brood: 2 },
+  'hive-yard-nuc-4': { x: 78, y: 46, nucBoxes: 2 },
+  'hive-yard-6': { x: 78, y: 58, brood: 2 },
+  'hive-yard-7': { x: 78, y: 70, brood: 2 },
+  'hive-yard-nuc-5': { x: 78, y: 82, nucBoxes: 3 },
+  'hive-yard-nuc-6': { x: 78, y: 90, nucBoxes: 3 },
+}
 
 const GARAGE_SHAPE: Point[] = [
   { x: 6, y: 16 },
@@ -52,18 +73,31 @@ function hive(
   return { id, name, siteId, kind, stack, x, y, padId: null }
 }
 
-function hiveBaseParts(key: string): StackLayer[] {
+function broodAndLid(n: number, brood: 1 | 2): StackLayer[] {
+  const boxes: StackLayer[] = []
+  for (let i = 1; i <= brood; i += 1) {
+    boxes.push({
+      id: `brood-yard-${n}-${i}`,
+      typeId: DEEP_BOX,
+      role: 'brood',
+    })
+  }
   return [
-    { id: `bottom-${key}`, typeId: BOTTOM_BOARD, role: 'bottom' },
-    { id: `inner-${key}`, typeId: INNER_COVER, role: 'inner-cover' },
+    ...boxes,
+    { id: `lid-yard-${n}`, typeId: METAL_LID, role: 'lid' },
   ]
 }
 
-function yardFullParts(n: number): StackLayer[] {
-  return [
-    ...hiveBaseParts(`yard-${n}`),
-    { id: `lid-yard-${n}`, typeId: METAL_LID, role: 'lid' },
-  ]
+function nucBoxes(key: string, count: number, typeId: string): StackLayer[] {
+  const layers: StackLayer[] = []
+  for (let i = 1; i <= count; i += 1) {
+    layers.push({
+      id: `nuc-${key}-${i}`,
+      typeId,
+      role: 'nuc-box',
+    })
+  }
+  return layers
 }
 
 function pad(
@@ -86,13 +120,37 @@ function pad(
   }
 }
 
+export function applyLYardDrawing(hives: Hive[]): Hive[] {
+  let n = 0
+  const nextId = () => `lyard-${n++}`
+  return hives.map((hive) => {
+    let stack = hive.stack.filter(
+      (layer) => layer.role !== 'bottom' && layer.role !== 'inner-cover',
+    )
+    const place = L_YARD_PLACES[hive.id]
+    if (!place) return { ...hive, stack: sortStack(stack) }
+    if (place.brood) {
+      stack = setRoleCount(stack, 'brood', DEEP_BOX, place.brood, nextId)
+    }
+    if (place.nucBoxes) {
+      stack = setRoleCount(stack, 'nuc-box', NUC_BOX_4, place.nucBoxes, nextId)
+    }
+    return {
+      ...hive,
+      x: place.x,
+      y: place.y,
+      stack: sortStack(stack),
+    }
+  })
+}
+
 export function createSeedState(): AppState {
   const sites: Site[] = [
     {
       id: HOME_YARD,
       name: 'Home yard',
       summary:
-        'L-shaped yard. Hives and kit can be moved around — nothing is glued to a pad. Metal lids on the seven full-size hives.',
+        'L-shaped apiary from Keith’s drawing. Drag markers as the yard changes. Metal lids on the seven full-size hives.',
       lidTypeId: 'metal-lid',
       shape: L_YARD_SHAPE.map((p) => ({ ...p })),
     },
@@ -113,20 +171,21 @@ export function createSeedState(): AppState {
     },
   ]
 
+  // Top arm left → right, then down the right arm (Keith’s drawing).
   const hives: Hive[] = [
-    hive('hive-yard-1', 'Yard 1', HOME_YARD, 'full-size', 18, 22, yardFullParts(1)),
-    hive('hive-yard-2', 'Yard 2', HOME_YARD, 'full-size', 36, 22, yardFullParts(2)),
-    hive('hive-yard-3', 'Yard 3', HOME_YARD, 'full-size', 54, 22, yardFullParts(3)),
-    hive('hive-yard-4', 'Yard 4', HOME_YARD, 'full-size', 72, 22, yardFullParts(4)),
-    hive('hive-yard-5', 'Yard 5', HOME_YARD, 'full-size', 22, 54, yardFullParts(5)),
-    hive('hive-yard-6', 'Yard 6', HOME_YARD, 'full-size', 22, 70, yardFullParts(6)),
-    hive('hive-yard-7', 'Yard 7', HOME_YARD, 'full-size', 22, 84, yardFullParts(7)),
-    hive('hive-yard-nuc-1', 'Yard nuc 1', HOME_YARD, 'nuc-4', 50, 34, hiveBaseParts('yard-nuc-1')),
-    hive('hive-yard-nuc-2', 'Yard nuc 2', HOME_YARD, 'nuc-4', 66, 34, hiveBaseParts('yard-nuc-2')),
-    hive('hive-yard-nuc-3', 'Yard nuc 3', HOME_YARD, 'nuc-4', 82, 34, hiveBaseParts('yard-nuc-3')),
-    hive('hive-yard-nuc-4', 'Yard nuc 4', HOME_YARD, 'nuc-4', 32, 54, hiveBaseParts('yard-nuc-4')),
-    hive('hive-yard-nuc-5', 'Yard nuc 5', HOME_YARD, 'nuc-4', 32, 70, hiveBaseParts('yard-nuc-5')),
-    hive('hive-yard-nuc-6', 'Yard nuc 6', HOME_YARD, 'nuc-4', 32, 84, hiveBaseParts('yard-nuc-6')),
+    hive('hive-yard-nuc-1', 'Yard nuc 1', HOME_YARD, 'nuc-4', 12, 24, nucBoxes('yard-nuc-1', 3, NUC_BOX_4)),
+    hive('hive-yard-nuc-2', 'Yard nuc 2', HOME_YARD, 'nuc-4', 22, 24, nucBoxes('yard-nuc-2', 3, NUC_BOX_4)),
+    hive('hive-yard-nuc-3', 'Yard nuc 3', HOME_YARD, 'nuc-4', 32, 24, nucBoxes('yard-nuc-3', 3, NUC_BOX_4)),
+    hive('hive-yard-1', 'Yard 1', HOME_YARD, 'full-size', 44, 24, broodAndLid(1, 1)),
+    hive('hive-yard-2', 'Yard 2', HOME_YARD, 'full-size', 54, 24, broodAndLid(2, 1)),
+    hive('hive-yard-3', 'Yard 3', HOME_YARD, 'full-size', 74, 24, broodAndLid(3, 2)),
+    hive('hive-yard-4', 'Yard 4', HOME_YARD, 'full-size', 84, 24, broodAndLid(4, 2)),
+    hive('hive-yard-5', 'Yard 5', HOME_YARD, 'full-size', 92, 24, broodAndLid(5, 2)),
+    hive('hive-yard-nuc-4', 'Yard nuc 4', HOME_YARD, 'nuc-4', 78, 46, nucBoxes('yard-nuc-4', 2, NUC_BOX_4)),
+    hive('hive-yard-6', 'Yard 6', HOME_YARD, 'full-size', 78, 58, broodAndLid(6, 2)),
+    hive('hive-yard-7', 'Yard 7', HOME_YARD, 'full-size', 78, 70, broodAndLid(7, 2)),
+    hive('hive-yard-nuc-5', 'Yard nuc 5', HOME_YARD, 'nuc-4', 78, 82, nucBoxes('yard-nuc-5', 3, NUC_BOX_4)),
+    hive('hive-yard-nuc-6', 'Yard nuc 6', HOME_YARD, 'nuc-4', 78, 90, nucBoxes('yard-nuc-6', 3, NUC_BOX_4)),
     hive(
       'hive-far-side-nuc',
       'Far side nuc',
@@ -134,11 +193,7 @@ export function createSeedState(): AppState {
       'nuc-5',
       50,
       50,
-      sortStack([
-        ...hiveBaseParts('far-side-nuc'),
-        { id: 'layer-far-1', typeId: NUC_BOX_5, role: 'nuc-box' },
-        { id: 'layer-far-2', typeId: NUC_BOX_5, role: 'nuc-box' },
-      ]),
+      sortStack(nucBoxes('far-side-nuc', 2, NUC_BOX_5)),
     ),
   ]
 
@@ -162,12 +217,14 @@ export function createSeedState(): AppState {
   owned[DEEP_BOX] = 20
   owned[SHALLOW_BOX] = 20
   owned[METAL_LID] = 12
+  owned[BOTTOM_BOARD] = 2
+  owned[INNER_COVER] = 2
   owned[DEEP_USED_FRAME] = 50
   owned[WAXED_SPRING_FRAME] = 50
   owned[UNBUILT_SPRING_FRAME] = 50
 
   return {
-    version: 4,
+    version: 5,
     appName: 'Hives',
     equipmentTypes: BUILTIN_TYPES.map((type) => ({ ...type })),
     owned,
