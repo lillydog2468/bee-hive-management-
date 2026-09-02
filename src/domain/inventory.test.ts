@@ -2,11 +2,16 @@ import { describe, expect, it } from 'vitest'
 import {
   BOTTOM_BOARD,
   DEEP_BOX,
+  DEEP_USED_FRAME,
   METAL_LID,
   NUC_BOX_4,
   NUC_BOX_5,
   SHALLOW_BOX,
+  SHALLOW_FRAME,
+  UNBUILT_SPRING_FRAME,
+  WAXED_SPRING_FRAME,
   WOODEN_LID,
+  YARD_FULL_SIZE_IDS,
 } from './equipment.ts'
 import { inUseCount, tallyInUse, unusedCount, unusedForType } from './inventory.ts'
 import { reducer } from './reducer.ts'
@@ -22,10 +27,54 @@ describe('seed', () => {
     expect(state.owned[SHALLOW_BOX]).toBe(20)
   })
 
-  it('starts every other built-in type at owned 0', () => {
+  it('puts 5 spare metal lids in unused and 7 on L-yard full-size hives', () => {
     const state = createSeedState()
+    expect(state.owned[METAL_LID]).toBe(12)
+    expect(tallyInUse(state.hives)[METAL_LID]).toBe(7)
+    expect(unusedForType(state, METAL_LID)).toBe(5)
+    for (const id of YARD_FULL_SIZE_IDS) {
+      const hive = state.hives.find((item) => item.id === id)
+      expect(hive?.stack).toEqual([
+        { id: `lid-${id.replace('hive-', '')}`, typeId: METAL_LID, role: 'lid' },
+      ])
+    }
+  })
+
+  it('does not invent lids for outdoor nucs or the far-side nuc', () => {
+    const state = createSeedState()
+    const nucs = state.hives.filter(
+      (hive) => hive.kind === 'nuc-4' || hive.kind === 'nuc-5',
+    )
+    expect(nucs).toHaveLength(7)
+    for (const hive of nucs) {
+      expect(hive.stack.some((layer) => layer.role === 'lid')).toBe(false)
+    }
+  })
+
+  it('tracks three frame lots by condition and does not invent shallow counts', () => {
+    const state = createSeedState()
+    expect(state.owned[DEEP_USED_FRAME]).toBe(50)
+    expect(state.owned[WAXED_SPRING_FRAME]).toBe(50)
+    expect(state.owned[UNBUILT_SPRING_FRAME]).toBe(50)
+    expect(unusedForType(state, DEEP_USED_FRAME)).toBe(50)
+    expect(unusedForType(state, WAXED_SPRING_FRAME)).toBe(50)
+    expect(unusedForType(state, UNBUILT_SPRING_FRAME)).toBe(50)
+    expect(state.owned[SHALLOW_FRAME]).toBe(0)
+    expect(unusedForType(state, SHALLOW_FRAME)).toBe(0)
+  })
+
+  it('starts remaining built-in types at owned 0', () => {
+    const state = createSeedState()
+    const seeded = new Set([
+      DEEP_BOX,
+      SHALLOW_BOX,
+      METAL_LID,
+      DEEP_USED_FRAME,
+      WAXED_SPRING_FRAME,
+      UNBUILT_SPRING_FRAME,
+    ])
     for (const type of state.equipmentTypes) {
-      if (type.id === DEEP_BOX || type.id === SHALLOW_BOX) continue
+      if (seeded.has(type.id)) continue
       expect(state.owned[type.id]).toBe(0)
     }
   })
@@ -37,7 +86,8 @@ describe('seed', () => {
     expect(home.filter((hive) => hive.kind === 'full-size')).toHaveLength(7)
     expect(home.filter((hive) => hive.kind === 'nuc-4')).toHaveLength(6)
     for (const hive of home) {
-      expect(hive.stack).toEqual([])
+      expect(hive.stack.some((layer) => layer.role === 'brood')).toBe(false)
+      expect(hive.stack.some((layer) => layer.role === 'super')).toBe(false)
     }
   })
 
@@ -74,7 +124,9 @@ describe('seed', () => {
       'shallow-box',
       'nuc-box-4',
       'nuc-box-5',
-      'deep-frame',
+      'deep-used-frame',
+      'waxed-spring-frame',
+      'unbuilt-spring-frame',
       'shallow-frame',
       'bottom-board',
       'inner-cover',
@@ -130,7 +182,10 @@ describe('unused accounting', () => {
 
   it('does not treat garage pad kit as unused-pool in-use', () => {
     const state = createSeedState()
-    expect(Object.keys(tallyInUse(state.hives)).sort()).toEqual([NUC_BOX_5])
+    expect(Object.keys(tallyInUse(state.hives)).sort()).toEqual([
+      METAL_LID,
+      NUC_BOX_5,
+    ])
   })
 })
 
@@ -170,21 +225,15 @@ describe('reducer', () => {
     expect(hive?.stack.some((layer) => layer.role === 'lid')).toBe(false)
     expect(unusedForType(state, BOTTOM_BOARD)).toBe(0)
     expect(unusedForType(state, WOODEN_LID)).toBe(0)
+    expect(unusedForType(state, METAL_LID)).toBe(6)
     const shown = displayStack(hive!, hivePad(state, hive!))
     expect(shown.map((layer) => layer.typeId)).toEqual([BOTTOM_BOARD, WOODEN_LID])
     expect(shown.every((layer) => layer.siteLocked)).toBe(true)
   })
 
-  it('returns a pool lid to unused when a hive sits on a garage pad', () => {
+  it('returns an L-yard metal lid to unused when that hive sits on a garage pad', () => {
     let state = createSeedState()
-    state = reducer(state, {
-      type: 'toggle-part',
-      hiveId: 'hive-yard-1',
-      part: 'lid',
-      on: true,
-      lidTypeId: METAL_LID,
-    })
-    expect(unusedForType(state, METAL_LID)).toBe(-1)
+    expect(unusedForType(state, METAL_LID)).toBe(5)
     state = reducer(state, {
       type: 'place-hive-on-pad',
       hiveId: 'hive-yard-1',
@@ -192,7 +241,7 @@ describe('reducer', () => {
     })
     const hive = state.hives.find((item) => item.id === 'hive-yard-1')
     expect(hive?.stack.some((layer) => layer.typeId === METAL_LID)).toBe(false)
-    expect(unusedForType(state, METAL_LID)).toBe(0)
+    expect(unusedForType(state, METAL_LID)).toBe(6)
     expect(unusedForType(state, WOODEN_LID)).toBe(0)
   })
 

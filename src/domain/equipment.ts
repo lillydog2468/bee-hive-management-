@@ -4,7 +4,9 @@ export const DEEP_BOX = 'deep-box'
 export const SHALLOW_BOX = 'shallow-box'
 export const NUC_BOX_4 = 'nuc-box-4'
 export const NUC_BOX_5 = 'nuc-box-5'
-export const DEEP_FRAME = 'deep-frame'
+export const DEEP_USED_FRAME = 'deep-used-frame'
+export const WAXED_SPRING_FRAME = 'waxed-spring-frame'
+export const UNBUILT_SPRING_FRAME = 'unbuilt-spring-frame'
 export const SHALLOW_FRAME = 'shallow-frame'
 export const BOTTOM_BOARD = 'bottom-board'
 export const INNER_COVER = 'inner-cover'
@@ -43,9 +45,23 @@ export const BUILTIN_TYPES: EquipmentType[] = [
     builtIn: true,
   },
   {
-    id: DEEP_FRAME,
-    name: 'Deep frames',
-    shortName: 'Deep frames',
+    id: DEEP_USED_FRAME,
+    name: 'Deep used frames',
+    shortName: 'Deep used',
+    group: 'frames',
+    builtIn: true,
+  },
+  {
+    id: WAXED_SPRING_FRAME,
+    name: 'Waxed, ready for spring',
+    shortName: 'Waxed (spring)',
+    group: 'frames',
+    builtIn: true,
+  },
+  {
+    id: UNBUILT_SPRING_FRAME,
+    name: 'Unbuilt, ready for spring',
+    shortName: 'Unbuilt (spring)',
     group: 'frames',
     builtIn: true,
   },
@@ -102,11 +118,27 @@ export const BUILTIN_TYPES: EquipmentType[] = [
 
 export const GROUP_LABELS: Record<EquipmentGroup, string> = {
   boxes: 'Boxes',
-  frames: 'Frames',
+  frames: 'Frames by condition',
   parts: 'Hive parts',
   feeding: 'Feeding',
   custom: 'Other types',
 }
+
+export const FRAME_CONDITION_IDS = [
+  DEEP_USED_FRAME,
+  WAXED_SPRING_FRAME,
+  UNBUILT_SPRING_FRAME,
+] as const
+
+export const YARD_FULL_SIZE_IDS = [
+  'hive-yard-1',
+  'hive-yard-2',
+  'hive-yard-3',
+  'hive-yard-4',
+  'hive-yard-5',
+  'hive-yard-6',
+  'hive-yard-7',
+] as const
 
 export const GROUP_ORDER: EquipmentGroup[] = [
   'boxes',

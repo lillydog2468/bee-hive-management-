@@ -1,4 +1,5 @@
 import { Layout } from '../components/Layout.tsx'
+import { METAL_LID } from '../domain/equipment.ts'
 import { hiveKindLabel } from '../domain/names.ts'
 import { countRole } from '../domain/stack.ts'
 import { useStore } from '../state/context.ts'
@@ -38,7 +39,15 @@ export function HivesScreen() {
                     const bits = []
                     if (brood) bits.push(`${brood} brood`)
                     if (supers) bits.push(`${supers} super${supers === 1 ? '' : 's'}`)
-                    if (!brood && !supers) bits.push(`${hive.stack.length} piece${hive.stack.length === 1 ? '' : 's'}`)
+                    const lid = hive.stack.find((layer) => layer.role === 'lid')
+                    if (lid && !brood && !supers) {
+                      bits.push(
+                        lid.typeId === METAL_LID ? 'Metal lid · brood not set' : 'Lid · brood not set',
+                      )
+                    }
+                    if (bits.length === 0) {
+                      bits.push(`${hive.stack.length} piece${hive.stack.length === 1 ? '' : 's'}`)
+                    }
                     detail = bits.join(' · ')
                   } else if (hive.kind !== 'full-size' && nucs > 0) {
                     detail = `${nucs} nuc box${nucs === 1 ? '' : 'es'}`

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BOTTOM_BOARD, WOODEN_LID } from '../domain/equipment.ts'
+import { BOTTOM_BOARD, FRAME_CONDITION_IDS, METAL_LID, SHALLOW_FRAME, WOODEN_LID } from '../domain/equipment.ts'
 import { Layout } from '../components/Layout.tsx'
 import { Stepper } from '../components/Stepper.tsx'
 import { inUseCount, unusedCount } from '../domain/inventory.ts'
@@ -77,6 +77,31 @@ export function StockScreen({ typeId }: { typeId: string }) {
             the far-side hive. Only add a number here if you own extra pieces besides
             those pads.
           </p>
+        </div>
+      ) : null}
+
+      {type.id === METAL_LID ? (
+        <div className="banner">
+          <p>
+            Seven metal lids are on the L-yard full-size hives. Five are spare.
+            No lids are recorded for the outdoor 4-frame nucs or the far-side
+            5-frame nuc.
+          </p>
+        </div>
+      ) : null}
+
+      {(FRAME_CONDITION_IDS as readonly string[]).includes(type.id) ? (
+        <div className="banner">
+          <p>
+            Frames are counted by condition, not as one pile. Only the used lot was
+            named as deep. The waxed and unbuilt lots were not named as shallow.
+          </p>
+        </div>
+      ) : null}
+
+      {type.id === SHALLOW_FRAME ? (
+        <div className="banner">
+          <p>No shallow frame count has been given, so this starts at 0.</p>
         </div>
       ) : null}
 

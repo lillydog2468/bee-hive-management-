@@ -1,5 +1,14 @@
-import { BOTTOM_BOARD, GROUP_LABELS, GROUP_ORDER, WOODEN_LID } from '../domain/equipment.ts'
+import {
+  BOTTOM_BOARD,
+  FRAME_CONDITION_IDS,
+  GROUP_LABELS,
+  GROUP_ORDER,
+  METAL_LID,
+  SHALLOW_FRAME,
+  WOODEN_LID,
+} from '../domain/equipment.ts'
 import { inUseCount, unusedCount } from '../domain/inventory.ts'
+import type { EquipmentType } from '../domain/types.ts'
 import { Layout } from '../components/Layout.tsx'
 import { useStore } from '../state/context.ts'
 
@@ -12,12 +21,60 @@ export function UnusedScreen() {
   const lockedPads = state.pads.filter((pad) => pad.lockedBottomAndLid)
   const lockedFull = lockedPads.filter((pad) => pad.size === 'full-size').length
   const lockedNuc = lockedPads.filter((pad) => pad.size === 'nuc').length
+  const metal = state.equipmentTypes.find((type) => type.id === METAL_LID)
+  const frameLots = FRAME_CONDITION_IDS.map((id) =>
+    state.equipmentTypes.find((type) => type.id === id),
+  ).filter((type): type is EquipmentType => Boolean(type))
+  const featured = new Set<string>([METAL_LID, ...FRAME_CONDITION_IDS])
 
   return (
     <Layout
       title="Unused kit"
       subtitle="Owned equipment that is not assigned to a hive stack. This is the number to trust when you want to know what is free."
     >
+      {metal ? (
+        <section className="group">
+          <p className="spotlight-kicker">Spare lids</p>
+          <h2>Metal lids</h2>
+          <p className="card-copy">
+            Seven are on the L-yard full-size hives. Five are spare. No lids are
+            recorded for the outdoor 4-frame nucs or the far-side 5-frame nuc.
+          </p>
+          <ul className="kit-list">
+            <KitRow
+              type={metal}
+              owned={state.owned[metal.id] ?? 0}
+              used={inUseCount(inUse, metal.id)}
+              spotlight
+              onOpen={() => go({ page: 'stock', typeId: metal.id })}
+            />
+          </ul>
+        </section>
+      ) : null}
+
+      {frameLots.length > 0 ? (
+        <section className="group">
+          <p className="spotlight-kicker">Frames by condition</p>
+          <h2>Three lots</h2>
+          <p className="card-copy">
+            Counted by condition, not as one pile. The used lot is deep. The other
+            two were not named as deep or shallow.
+          </p>
+          <ul className="kit-list">
+            {frameLots.map((type) => (
+              <KitRow
+                key={type.id}
+                type={type}
+                owned={state.owned[type.id] ?? 0}
+                used={inUseCount(inUse, type.id)}
+                spotlight
+                onOpen={() => go({ page: 'stock', typeId: type.id })}
+              />
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       {lockedPads.length > 0 ? (
         <div className="banner">
           <p>
@@ -40,61 +97,93 @@ export function UnusedScreen() {
       ) : null}
 
       {GROUP_ORDER.map((group) => {
-        const types = state.equipmentTypes.filter((type) => type.group === group)
+        const types = state.equipmentTypes.filter(
+          (type) => type.group === group && !featured.has(type.id),
+        )
         if (types.length === 0) return null
         return (
           <section key={group} className="group">
             <h2>{GROUP_LABELS[group]}</h2>
             <ul className="kit-list">
-              {types.map((type) => {
-                const owned = state.owned[type.id] ?? 0
-                const used = inUseCount(inUse, type.id)
-                const unused = unusedCount(owned, used)
-                const free = Math.max(0, unused)
-                return (
-                  <li key={type.id}>
-                    <button
-                      type="button"
-                      className="kit-row"
-                      onClick={() => go({ page: 'stock', typeId: type.id })}
-                    >
-                      <span className="kit-copy">
-                        <span className="kit-name">{type.name}</span>
-                        <span className="kit-meta">
-                          {owned} owned · {used} on hives
-                          {used > owned ? ` · short by ${used - owned}` : ''}
-                          {type.id === BOTTOM_BOARD || type.id === WOODEN_LID
-                            ? ' · garage pad pieces not counted here'
-                            : ''}
-                        </span>
-                      </span>
-                      <span
-                        className={
-                          unused < 0
-                            ? 'kit-count is-short'
-                            : free > 0
-                              ? 'kit-count is-free'
-                              : 'kit-count'
-                        }
-                      >
-                        {free}
-                      </span>
-                    </button>
-                  </li>
-                )
-              })}
+              {types.map((type) => (
+                <KitRow
+                  key={type.id}
+                  type={type}
+                  owned={state.owned[type.id] ?? 0}
+                  used={inUseCount(inUse, type.id)}
+                  note={
+                    type.id === BOTTOM_BOARD || type.id === WOODEN_LID
+                      ? 'garage pad pieces not counted here'
+                      : type.id === SHALLOW_FRAME
+                        ? 'no shallow count given'
+                        : undefined
+                  }
+                  onOpen={() => go({ page: 'stock', typeId: type.id })}
+                />
+              ))}
             </ul>
           </section>
         )
       })}
 
-          <p className="footnote">
-            Tap a type to add or adjust stock. Assigning kit to a hive takes it out of
-            unused; taking it off a hive returns it.
-          </p>
-          <a className="secondary link-btn" href="#/kit/new">
-            Add a type
-          </a>
+      <p className="footnote">
+        Tap a type to add or adjust stock. Assigning kit to a hive takes it out of
+        unused; taking it off a hive returns it.
+      </p>
+      <a className="secondary link-btn" href="#/kit/new">
+        Add a type
+      </a>
     </Layout>
+  )
+}
+
+function KitRow({
+  type,
+  owned,
+  used,
+  onOpen,
+  spotlight = false,
+  note,
+}: {
+  type: EquipmentType
+  owned: number
+  used: number
+  onOpen: () => void
+  spotlight?: boolean
+  note?: string
+}) {
+  const unused = unusedCount(owned, used)
+  const free = Math.max(0, unused)
+  const extras = [
+    used > owned ? `short by ${used - owned}` : '',
+    note ?? '',
+  ].filter(Boolean)
+  return (
+    <li>
+      <button
+        type="button"
+        className={spotlight ? 'kit-row is-spotlight' : 'kit-row'}
+        onClick={onOpen}
+      >
+        <span className="kit-copy">
+          <span className="kit-name">{type.name}</span>
+          <span className="kit-meta">
+            {owned} owned · {used} on hives
+            {extras.length > 0 ? ` · ${extras.join(' · ')}` : ''}
+          </span>
+        </span>
+        <span
+          className={
+            unused < 0
+              ? 'kit-count is-short'
+              : free > 0
+                ? 'kit-count is-free'
+                : 'kit-count'
+          }
+        >
+          {free}
+        </span>
+      </button>
+    </li>
   )
 }

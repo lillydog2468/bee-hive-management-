@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { WOODEN_LID } from './equipment.ts'
+import { METAL_LID, WOODEN_LID } from './equipment.ts'
 import { unusedForType } from './inventory.ts'
 import { createSeedState } from './seed.ts'
 import { migrateState } from './storage.ts'
@@ -21,8 +21,40 @@ describe('storage migrate', () => {
       })),
     }
     const next = migrateState(v1)
-    expect(next?.version).toBe(2)
+    expect(next?.version).toBe(3)
     expect(next?.pads.filter((pad) => pad.lockedBottomAndLid)).toHaveLength(10)
     expect(unusedForType(next!, WOODEN_LID)).toBe(0)
+    expect(unusedForType(next!, METAL_LID)).toBe(5)
+  })
+
+  it('assigns seven L-yard metal lids and the three frame lots when upgrading older data', () => {
+    const seed = createSeedState()
+    const v2 = {
+      ...seed,
+      version: 2 as const,
+      owned: { ...seed.owned, [METAL_LID]: 0 },
+      hives: seed.hives.map((hive) =>
+        hive.kind === 'full-size' && hive.siteId === 'home-yard'
+          ? { ...hive, stack: [] }
+          : hive,
+      ),
+    }
+    const next = migrateState(v2)
+    expect(next?.owned[METAL_LID]).toBe(12)
+    expect(unusedForType(next!, METAL_LID)).toBe(5)
+    const full = next!.hives.filter(
+      (hive) => hive.kind === 'full-size' && hive.siteId === 'home-yard',
+    )
+    expect(full).toHaveLength(7)
+    expect(
+      full.every((hive) =>
+        hive.stack.some((layer) => layer.typeId === METAL_LID),
+      ),
+    ).toBe(true)
+    expect(
+      next!.hives
+        .filter((hive) => hive.kind !== 'full-size')
+        .every((hive) => !hive.stack.some((layer) => layer.role === 'lid')),
+    ).toBe(true)
   })
 })

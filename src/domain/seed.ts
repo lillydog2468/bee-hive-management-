@@ -1,4 +1,13 @@
-import { BUILTIN_TYPES, DEEP_BOX, NUC_BOX_5, SHALLOW_BOX } from './equipment.ts'
+import {
+  BUILTIN_TYPES,
+  DEEP_BOX,
+  DEEP_USED_FRAME,
+  METAL_LID,
+  NUC_BOX_5,
+  SHALLOW_BOX,
+  UNBUILT_SPRING_FRAME,
+  WAXED_SPRING_FRAME,
+} from './equipment.ts'
 import type { AppState, Hive, Pad, Point, Site, StackLayer } from './types.ts'
 
 export const HOME_YARD = 'home-yard'
@@ -65,7 +74,7 @@ export function createSeedState(): AppState {
     {
       id: HOME_YARD,
       name: 'Home yard',
-      summary: 'L-shaped yard. Always changing. Metal lids.',
+      summary: 'L-shaped yard. Always changing. Metal lids on the seven full-size hives.',
       lidTypeId: 'metal-lid',
       shape: L_YARD_SHAPE.map((p) => ({ ...p })),
     },
@@ -86,13 +95,27 @@ export function createSeedState(): AppState {
   ]
 
   const hives: Hive[] = [
-    hive('hive-yard-1', 'Yard 1', HOME_YARD, 'full-size', 18, 22),
-    hive('hive-yard-2', 'Yard 2', HOME_YARD, 'full-size', 36, 22),
-    hive('hive-yard-3', 'Yard 3', HOME_YARD, 'full-size', 54, 22),
-    hive('hive-yard-4', 'Yard 4', HOME_YARD, 'full-size', 72, 22),
-    hive('hive-yard-5', 'Yard 5', HOME_YARD, 'full-size', 22, 54),
-    hive('hive-yard-6', 'Yard 6', HOME_YARD, 'full-size', 22, 70),
-    hive('hive-yard-7', 'Yard 7', HOME_YARD, 'full-size', 22, 84),
+    hive('hive-yard-1', 'Yard 1', HOME_YARD, 'full-size', 18, 22, [
+      { id: 'lid-yard-1', typeId: METAL_LID, role: 'lid' },
+    ]),
+    hive('hive-yard-2', 'Yard 2', HOME_YARD, 'full-size', 36, 22, [
+      { id: 'lid-yard-2', typeId: METAL_LID, role: 'lid' },
+    ]),
+    hive('hive-yard-3', 'Yard 3', HOME_YARD, 'full-size', 54, 22, [
+      { id: 'lid-yard-3', typeId: METAL_LID, role: 'lid' },
+    ]),
+    hive('hive-yard-4', 'Yard 4', HOME_YARD, 'full-size', 72, 22, [
+      { id: 'lid-yard-4', typeId: METAL_LID, role: 'lid' },
+    ]),
+    hive('hive-yard-5', 'Yard 5', HOME_YARD, 'full-size', 22, 54, [
+      { id: 'lid-yard-5', typeId: METAL_LID, role: 'lid' },
+    ]),
+    hive('hive-yard-6', 'Yard 6', HOME_YARD, 'full-size', 22, 70, [
+      { id: 'lid-yard-6', typeId: METAL_LID, role: 'lid' },
+    ]),
+    hive('hive-yard-7', 'Yard 7', HOME_YARD, 'full-size', 22, 84, [
+      { id: 'lid-yard-7', typeId: METAL_LID, role: 'lid' },
+    ]),
     hive('hive-yard-nuc-1', 'Yard nuc 1', HOME_YARD, 'nuc-4', 50, 34),
     hive('hive-yard-nuc-2', 'Yard nuc 2', HOME_YARD, 'nuc-4', 66, 34),
     hive('hive-yard-nuc-3', 'Yard nuc 3', HOME_YARD, 'nuc-4', 82, 34),
@@ -124,9 +147,13 @@ export function createSeedState(): AppState {
   }
   owned[DEEP_BOX] = 20
   owned[SHALLOW_BOX] = 20
+  owned[METAL_LID] = 12
+  owned[DEEP_USED_FRAME] = 50
+  owned[WAXED_SPRING_FRAME] = 50
+  owned[UNBUILT_SPRING_FRAME] = 50
 
   return {
-    version: 2,
+    version: 3,
     appName: 'Hives',
     equipmentTypes: BUILTIN_TYPES.map((type) => ({ ...type })),
     owned,

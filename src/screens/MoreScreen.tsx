@@ -46,7 +46,7 @@ export function MoreScreen() {
       <section className="card">
         <h2>Starting point</h2>
         <p className="card-copy">
-          Replace everything in this browser with the starting stock: 20 deep boxes and 20 shallow boxes unused, the three sites, and stacks only where they were given.
+          Replace everything in this browser with the starting point: 20 unused deep boxes, 20 unused shallow boxes, 5 spare metal lids (7 more on the L-yard full-size hives), three frame lots of 50, the three sites, and stacks only where they were given.
         </p>
         {confirm ? (
           <div className="confirm">

@@ -71,7 +71,7 @@ export type Pad = {
 }
 
 export type AppState = {
-  version: 2
+  version: 3
   appName: string
   equipmentTypes: EquipmentType[]
   owned: Record<string, number>

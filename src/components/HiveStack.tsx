@@ -63,6 +63,10 @@ export function HiveStack({
         <p className="stack-caption">
           This pad’s bottom board and wooden lid stay here. Unused-pool boxes are not assigned yet.
         </p>
+      ) : movable.every((layer) => layer.role === 'lid') ? (
+        <p className="stack-caption">
+          Metal lid in use. Brood chambers and supers are not set yet.
+        </p>
       ) : (
         <p className="stack-caption">Top of hive ↑ · Bottom of hive ↓</p>
       )}
