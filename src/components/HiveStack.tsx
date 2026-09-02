@@ -14,16 +14,20 @@ const ROLE_LABEL: Record<string, string> = {
   extra: 'Other kit',
 }
 
+const REQUIRED_ROLES = new Set(['bottom', 'inner-cover', 'lid'])
+
 export function HiveStack({
   stack,
   types,
+  missingLid = false,
 }: {
   stack: StackLayer[]
   types: EquipmentType[]
+  missingLid?: boolean
 }) {
   const names = new Map(types.map((type) => [type.id, type.shortName]))
   const movable = stack.filter((layer) => !layer.siteLocked)
-  if (stack.length === 0) {
+  if (stack.length === 0 && !missingLid) {
     return (
       <div className="stack is-empty">
         <p>No kit assigned. Unused counts stay as they are until you set a stack.</p>
@@ -33,9 +37,20 @@ export function HiveStack({
 
   const visual = stack.filter((layer) => layer.role !== 'feeder')
   const feeder = stack.find((layer) => layer.role === 'feeder')
+  const onlyRequired =
+    movable.length > 0 &&
+    movable.every((layer) => REQUIRED_ROLES.has(layer.role))
+  const padLocked = stack.some((layer) => layer.siteLocked)
+  const onlyPadKit = movable.length === 0 && padLocked && !missingLid
 
   return (
     <div className="stack" aria-label="Hive stack, bottom to top">
+      {missingLid ? (
+        <div className="layer role-lid is-missing">
+          <span className="layer-name">Lid</span>
+          <span className="layer-type">Required — choose metal or wooden</span>
+        </div>
+      ) : null}
       {[...visual].reverse().map((layer) => {
         const depth = boxDepth(layer.typeId)
         const feeding = layer.role === 'feeder-box'
@@ -59,13 +74,24 @@ export function HiveStack({
           </div>
         )
       })}
-      {movable.length === 0 ? (
+      {missingLid ? (
+        <p className="stack-caption">
+          Every hive needs a bottom board, an inner cover and a lid. Choose a lid
+          type — garage wooden lids stay on those pads.
+        </p>
+      ) : padLocked && onlyRequired ? (
+        <p className="stack-caption">
+          This pad’s bottom board and wooden lid stay here. The inner cover stays
+          on the hive. Unused-pool boxes are not assigned yet.
+        </p>
+      ) : onlyPadKit ? (
         <p className="stack-caption">
           This pad’s bottom board and wooden lid stay here. Unused-pool boxes are not assigned yet.
         </p>
-      ) : movable.every((layer) => layer.role === 'lid') ? (
+      ) : onlyRequired ? (
         <p className="stack-caption">
-          Metal lid in use. Brood chambers and supers are not set yet.
+          Bottom board, inner cover and lid stay on the hive. Brood chambers and
+          supers are not set yet.
         </p>
       ) : (
         <p className="stack-caption">Top of hive ↑ · Bottom of hive ↓</p>

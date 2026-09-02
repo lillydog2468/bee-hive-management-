@@ -5,6 +5,10 @@ import { Sheet } from '../components/Sheet.tsx'
 import { Stepper } from '../components/Stepper.tsx'
 import { METAL_LID, WOODEN_LID } from '../domain/equipment.ts'
 import { hiveKindLabel } from '../domain/names.ts'
+import {
+  hiveNeedsLidChoice,
+  hiveShouldHaveMetalLid,
+} from '../domain/requiredParts.ts'
 import { displayStack, hasLockedBottomAndLid, hivePad } from '../domain/siteLocked.ts'
 import { countRole, hasRole, readingFeeding } from '../domain/stack.ts'
 import type { FeedingConfig } from '../domain/types.ts'
@@ -16,7 +20,6 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
   const [renaming, setRenaming] = useState(false)
   const [name, setName] = useState(hive?.name ?? '')
   const [moveOpen, setMoveOpen] = useState(false)
-  const [lidOpen, setLidOpen] = useState(false)
   const [extraOpen, setExtraOpen] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
 
@@ -38,6 +41,14 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
   const feeding = readingFeeding(hive.stack)
   const lid = shown.find((layer) => layer.role === 'lid')
   const extras = hive.stack.filter((layer) => layer.role === 'extra')
+  const needsLid = hiveNeedsLidChoice(hive, pad)
+  const metalLidLocked = hiveShouldHaveMetalLid(hive, pad)
+  const hasReturnableKit = hive.stack.some(
+    (layer) =>
+      layer.role !== 'bottom' &&
+      layer.role !== 'inner-cover' &&
+      layer.role !== 'lid',
+  )
 
   function setFeeding(next: FeedingConfig | null) {
     dispatch({ type: 'set-feeding', hiveId: hive!.id, feeding: next })
@@ -69,7 +80,11 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         </button>
       }
     >
-      <HiveStack stack={shown} types={state.equipmentTypes} />
+      <HiveStack
+        stack={shown}
+        types={state.equipmentTypes}
+        missingLid={needsLid}
+      />
 
       {hive.kind === 'full-size' ? (
         <section className="card stack-card">
@@ -133,64 +148,86 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
 
       <section className="card">
         <h2>Parts</h2>
+        <p className="card-copy">
+          Every hive needs a bottom board, an inner cover and a lid. They cannot
+          be turned off.
+        </p>
         <ToggleRow
           label="Bottom board"
           on={lockedPad || hasRole(hive.stack, 'bottom')}
-          locked={lockedPad}
-          lockNote="This pad’s bottom board stays here. It is not unused kit."
-          onToggle={(on) =>
-            dispatch({ type: 'toggle-part', hiveId: hive.id, part: 'bottom', on })
+          locked
+          lockNote={
+            lockedPad
+              ? 'This pad’s bottom board stays here. It is not unused kit, and it cannot be used on the L-yard or the far-side hive.'
+              : 'Required on every hive. Spare count has not been given, so unused stays 0.'
           }
         />
         <ToggleRow
           label="Inner cover"
           on={hasRole(hive.stack, 'inner-cover')}
-          onToggle={(on) =>
-            dispatch({
-              type: 'toggle-part',
-              hiveId: hive.id,
-              part: 'inner-cover',
-              on,
-            })
-          }
+          locked
+          lockNote="Required on every hive. Spare count has not been given, so unused stays 0."
         />
-        <ToggleRow
-          label={
-            lockedPad
-              ? 'Lid (wooden, stays on this pad)'
-              : lid
-                ? lid.typeId === METAL_LID
+        {needsLid ? (
+          <div className="lid-needed">
+            <p>
+              <strong>Lid</strong> — required. No lid type is recorded for this
+              hive. Choose metal or wooden. Garage wooden lids stay on those pads
+              and cannot be used here.
+            </p>
+            <div className="segment">
+              <button
+                type="button"
+                onClick={() =>
+                  dispatch({
+                    type: 'toggle-part',
+                    hiveId: hive.id,
+                    part: 'lid',
+                    on: true,
+                    lidTypeId: METAL_LID,
+                  })
+                }
+              >
+                Metal lid
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  dispatch({
+                    type: 'toggle-part',
+                    hiveId: hive.id,
+                    part: 'lid',
+                    on: true,
+                    lidTypeId: WOODEN_LID,
+                  })
+                }
+              >
+                Wooden lid
+              </button>
+            </div>
+          </div>
+        ) : (
+          <ToggleRow
+            label={
+              lockedPad
+                ? 'Lid (wooden, stays on this pad)'
+                : lid?.typeId === METAL_LID
                   ? 'Lid (metal)'
-                  : lid.typeId === WOODEN_LID
+                  : lid?.typeId === WOODEN_LID
                     ? 'Lid (wooden)'
                     : 'Lid'
-                : site?.lidTypeId === METAL_LID
-                  ? 'Lid (metal on this site)'
-                  : site?.lidTypeId === WOODEN_LID
-                    ? 'Lid (wooden on this site)'
-                    : 'Lid (type not set for this site)'
-          }
-          on={Boolean(lid)}
-          locked={lockedPad}
-          lockNote="This pad’s wooden lid stays here. It cannot be used on the L-yard or the far-side hive."
-          onToggle={(on) => {
-            if (!on) {
-              dispatch({ type: 'toggle-part', hiveId: hive.id, part: 'lid', on: false })
-              return
             }
-            if (site?.lidTypeId) {
-              dispatch({
-                type: 'toggle-part',
-                hiveId: hive.id,
-                part: 'lid',
-                on: true,
-                lidTypeId: site.lidTypeId,
-              })
-              return
+            on={Boolean(lid)}
+            locked
+            lockNote={
+              lockedPad
+                ? 'This pad’s wooden lid stays here. It cannot be used on the L-yard or the far-side hive.'
+                : metalLidLocked
+                  ? 'The large L-yard hives use metal lids.'
+                  : 'Required on every hive.'
             }
-            setLidOpen(true)
-          }}
-        />
+          />
+        )}
       </section>
 
       <section className="card stack-card">
@@ -312,7 +349,7 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         <button className="secondary" type="button" onClick={() => setMoveOpen(true)}>
           Move to another site
         </button>
-        {hive.stack.length > 0 ? (
+        {hasReturnableKit ? (
           <button
             className="secondary"
             type="button"
@@ -349,48 +386,12 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         </Sheet>
       ) : null}
 
-      {lidOpen ? (
-        <Sheet title="Which lid?" onClose={() => setLidOpen(false)}>
-          <p className="sheet-lede">This site has no lid type recorded. Choose metal or wooden — nothing is assumed.</p>
-          <div className="choice-list">
-            <button
-              type="button"
-              onClick={() => {
-                dispatch({
-                  type: 'toggle-part',
-                  hiveId: hive.id,
-                  part: 'lid',
-                  on: true,
-                  lidTypeId: METAL_LID,
-                })
-                setLidOpen(false)
-              }}
-            >
-              Metal lid
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                dispatch({
-                  type: 'toggle-part',
-                  hiveId: hive.id,
-                  part: 'lid',
-                  on: true,
-                  lidTypeId: WOODEN_LID,
-                })
-                setLidOpen(false)
-              }}
-            >
-              Wooden lid
-            </button>
-          </div>
-        </Sheet>
-      ) : null}
-
       {moveOpen ? (
         <Sheet title="Move hive" onClose={() => setMoveOpen(false)}>
           <p className="sheet-lede">
-            Unused-pool kit stays on the hive. A garage pad’s bottom board and wooden lid stay on that pad.
+            L-yard hives and kit can be moved — they are not glued to a pad.
+            Unused-pool kit stays on the hive. A garage pad’s bottom board and
+            wooden lid stay on that pad and cannot be used anywhere else.
           </p>
           <div className="choice-list">
             {state.sites.map((item) => {
@@ -437,7 +438,13 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         <Sheet title="Add kit to this hive" onClose={() => setExtraOpen(false)}>
           <div className="choice-list">
             {state.equipmentTypes
-              .filter((type) => type.id !== 'bottom-board' && type.id !== 'wooden-lid')
+              .filter(
+                (type) =>
+                  type.id !== 'bottom-board' &&
+                  type.id !== 'inner-cover' &&
+                  type.id !== 'metal-lid' &&
+                  type.id !== 'wooden-lid',
+              )
               .map((type) => (
               <button
                 key={type.id}
@@ -483,13 +490,11 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
 function ToggleRow({
   label,
   on,
-  onToggle,
   locked = false,
   lockNote,
 }: {
   label: string
   on: boolean
-  onToggle: (on: boolean) => void
   locked?: boolean
   lockNote?: string
 }) {
@@ -499,12 +504,7 @@ function ToggleRow({
         {label}
         {locked && lockNote ? <span className="lock-note">{lockNote}</span> : null}
       </span>
-      <input
-        type="checkbox"
-        checked={on}
-        disabled={locked}
-        onChange={(event) => onToggle(event.target.checked)}
-      />
+      <input type="checkbox" checked={on} disabled={locked} readOnly />
     </label>
   )
 }

@@ -99,7 +99,12 @@ export function SiteMapScreen({ siteId }: { siteId: string }) {
       {addOpen ? (
         <Sheet title="Add to this site" onClose={() => setAddOpen(false)}>
           <p className="sheet-lede">
-            Hives occupy unused-pool kit when you set a stack. Garage pads keep their own bottom board and wooden lid, even when empty. Extra pads you add here do not invent more bottoms or lids.
+            Hives occupy unused-pool kit when you set a stack. Every hive needs a
+            bottom board, an inner cover and a lid. On the L-yard, hives and kit
+            can all be moved — they are not glued to a pad. Garage pads keep their
+            own bottom board and wooden lid, even when empty, and those cannot be
+            used anywhere else. Extra pads you add here do not invent more bottoms
+            or lids.
           </p>
           <div className="choice-list">
             <button type="button" onClick={() => addHive('full-size')}>

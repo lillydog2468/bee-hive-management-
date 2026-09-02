@@ -1,5 +1,11 @@
-import { nucBoxType } from './equipment.ts'
+import { METAL_LID, nucBoxType } from './equipment.ts'
 import { defaultHiveName, defaultPadName } from './names.ts'
+import {
+  canRemoveLayer,
+  ensureRequiredParts,
+  hiveShouldHaveMetalLid,
+  stackAfterClear,
+} from './requiredParts.ts'
 import { createSeedState } from './seed.ts'
 import { hasLockedBottomAndLid, hivePad } from './siteLocked.ts'
 import {
@@ -120,6 +126,10 @@ const ids = {
 }
 
 export function reducer(state: AppState, action: Action): AppState {
+  return ensureRequiredParts(reduce(state, action))
+}
+
+function reduce(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'rename-app':
       return { ...state, appName: action.name.trim() || state.appName }
@@ -275,6 +285,8 @@ export function reducer(state: AppState, action: Action): AppState {
         ) {
           return hive
         }
+        // Bottom, inner cover and lid stay on every hive once present.
+        if (!action.on) return hive
         if (action.part === 'bottom') {
           return {
             ...hive,
@@ -282,7 +294,7 @@ export function reducer(state: AppState, action: Action): AppState {
               hive.stack,
               'bottom',
               BOTTOM_BOARD_ID,
-              action.on,
+              true,
               ids.layer,
             ),
           }
@@ -294,18 +306,21 @@ export function reducer(state: AppState, action: Action): AppState {
               hive.stack,
               'inner-cover',
               INNER_COVER_ID,
-              action.on,
+              true,
               ids.layer,
             ),
           }
         }
-        const site = state.sites.find((item) => item.id === hive.siteId)
-        const lidTypeId =
-          action.lidTypeId ?? site?.lidTypeId ?? undefined
+        if (hive.stack.some((layer) => layer.role === 'lid')) return hive
+        const metalLocked = hiveShouldHaveMetalLid(hive, pad)
+        const lidTypeId = metalLocked
+          ? METAL_LID
+          : (action.lidTypeId ??
+            state.sites.find((item) => item.id === hive.siteId)?.lidTypeId)
         if (!lidTypeId) return hive
         return {
           ...hive,
-          stack: toggleRole(hive.stack, 'lid', lidTypeId, action.on, ids.layer),
+          stack: toggleRole(hive.stack, 'lid', lidTypeId, true, ids.layer),
         }
       })
     case 'set-feeding':
@@ -319,14 +334,17 @@ export function reducer(state: AppState, action: Action): AppState {
         stack: addExtra(hive.stack, action.typeId, () => action.extraId),
       }))
     case 'remove-layer':
-      return withHive(state, action.hiveId, (hive) => ({
-        ...hive,
-        stack: removeLayer(hive.stack, action.layerId),
-      }))
+      return withHive(state, action.hiveId, (hive) => {
+        const layer = hive.stack.find((item) => item.id === action.layerId)
+        if (!layer || !canRemoveLayer(hive, hivePad(state, hive), layer)) {
+          return hive
+        }
+        return { ...hive, stack: removeLayer(hive.stack, action.layerId) }
+      })
     case 'clear-stack':
       return withHive(state, action.hiveId, (hive) => ({
         ...hive,
-        stack: [],
+        stack: stackAfterClear(hive, hivePad(state, hive)),
       }))
     case 'add-hive': {
       const name = defaultHiveName(action.siteId, action.kind, state.hives)

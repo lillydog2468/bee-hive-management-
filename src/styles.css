@@ -664,6 +664,27 @@ input:not([type]) {
   border-radius: 10px 10px 4px 4px;
 }
 
+.layer.is-missing {
+  background: transparent;
+  border: 1.5px dashed var(--ink-soft);
+  color: var(--ink-soft);
+  min-height: 2.4rem;
+}
+
+.lid-needed {
+  padding: 0.7rem 0 0.2rem;
+  border-top: 1px solid var(--line);
+}
+
+.lid-needed p {
+  font-size: 0.92rem;
+  margin-bottom: 0.65rem;
+}
+
+.lid-needed .segment {
+  margin-top: 0;
+}
+
 .layer-name {
   font-size: 0.68rem;
   text-transform: uppercase;

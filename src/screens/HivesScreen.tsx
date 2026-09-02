@@ -1,6 +1,8 @@
 import { Layout } from '../components/Layout.tsx'
 import { METAL_LID } from '../domain/equipment.ts'
 import { hiveKindLabel } from '../domain/names.ts'
+import { hiveNeedsLidChoice } from '../domain/requiredParts.ts'
+import { hasLockedBottomAndLid, hivePad } from '../domain/siteLocked.ts'
 import { countRole } from '../domain/stack.ts'
 import { useStore } from '../state/context.ts'
 
@@ -25,35 +27,30 @@ export function HivesScreen() {
             ) : (
               <ul className="hive-list">
                 {hives.map((hive) => {
+                  const pad = hivePad(state, hive)
                   const brood = countRole(hive.stack, 'brood')
                   const supers = countRole(hive.stack, 'super')
                   const nucs = countRole(hive.stack, 'nuc-box')
-                  let detail = 'Stack not set'
-                  if (hive.padId) {
-                    const pad = state.pads.find((item) => item.id === hive.padId)
-                    if (pad?.lockedBottomAndLid && hive.stack.length === 0) {
-                      detail = 'Pad bottom and wooden lid · stack not set'
-                    }
+                  const bits: string[] = []
+                  if (hasLockedBottomAndLid(pad)) {
+                    bits.push('Pad bottom and wooden lid')
                   }
-                  if (hive.kind === 'full-size' && hive.stack.length > 0) {
-                    const bits = []
+                  if (hive.kind === 'full-size') {
                     if (brood) bits.push(`${brood} brood`)
                     if (supers) bits.push(`${supers} super${supers === 1 ? '' : 's'}`)
-                    const lid = hive.stack.find((layer) => layer.role === 'lid')
-                    if (lid && !brood && !supers) {
+                    if (!brood && !supers) {
+                      const lid = hive.stack.find((layer) => layer.role === 'lid')
                       bits.push(
-                        lid.typeId === METAL_LID ? 'Metal lid · brood not set' : 'Lid · brood not set',
+                        lid?.typeId === METAL_LID
+                          ? 'Metal lid · brood not set'
+                          : 'Brood not set',
                       )
                     }
-                    if (bits.length === 0) {
-                      bits.push(`${hive.stack.length} piece${hive.stack.length === 1 ? '' : 's'}`)
-                    }
-                    detail = bits.join(' · ')
-                  } else if (hive.kind !== 'full-size' && nucs > 0) {
-                    detail = `${nucs} nuc box${nucs === 1 ? '' : 'es'}`
-                  } else if (hive.stack.length > 0) {
-                    detail = `${hive.stack.length} piece${hive.stack.length === 1 ? '' : 's'}`
+                  } else if (nucs > 0) {
+                    bits.push(`${nucs} nuc box${nucs === 1 ? '' : 'es'}`)
                   }
+                  if (hiveNeedsLidChoice(hive, pad)) bits.push('Needs a lid')
+                  const detail = bits.length > 0 ? bits.join(' · ') : 'Stack not set'
                   return (
                     <li key={hive.id}>
                       <button

@@ -21,7 +21,7 @@ describe('storage migrate', () => {
       })),
     }
     const next = migrateState(v1)
-    expect(next?.version).toBe(3)
+    expect(next?.version).toBe(4)
     expect(next?.pads.filter((pad) => pad.lockedBottomAndLid)).toHaveLength(10)
     expect(unusedForType(next!, WOODEN_LID)).toBe(0)
     expect(unusedForType(next!, METAL_LID)).toBe(5)
@@ -56,5 +56,14 @@ describe('storage migrate', () => {
         .filter((hive) => hive.kind !== 'full-size')
         .every((hive) => !hive.stack.some((layer) => layer.role === 'lid')),
     ).toBe(true)
+    expect(
+      next!.hives.every(
+        (hive) =>
+          hive.stack.some((layer) => layer.role === 'bottom') &&
+          hive.stack.some((layer) => layer.role === 'inner-cover'),
+      ),
+    ).toBe(true)
+    expect(next?.owned['bottom-board']).toBe(0)
+    expect(next?.owned['inner-cover']).toBe(0)
   })
 })

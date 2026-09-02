@@ -7,6 +7,7 @@ import {
   YARD_FULL_SIZE_IDS,
 } from './equipment.ts'
 import { createSeedState, GARAGE } from './seed.ts'
+import { ensureRequiredParts } from './requiredParts.ts'
 import type { AppState, EquipmentType, Hive, Pad, StackLayer } from './types.ts'
 
 const STORAGE_KEY = 'hives.v1'
@@ -83,24 +84,35 @@ function applyV3(parsed: LooseState): AppState {
   owned[DEEP_USED_FRAME] = 50
   owned[WAXED_SPRING_FRAME] = 50
   owned[UNBUILT_SPRING_FRAME] = 50
-  return {
+  return toV4({
     ...parsed,
     version: 3,
     equipmentTypes,
     owned,
     hives: withYardMetalLids(parsed.hives),
     pads,
-  }
+  })
+}
+
+function toV4(
+  state: Omit<AppState, 'version'> & { version: number },
+): AppState {
+  return { ...ensureRequiredParts({ ...state, version: 4 }), version: 4 }
 }
 
 export function migrateState(parsed: LooseState): AppState | null {
   if (!Array.isArray(parsed.hives) || !Array.isArray(parsed.pads)) return null
-  if (parsed.version === 3) {
-    return {
+  if (parsed.version === 4) {
+    return toV4({
       ...parsed,
-      version: 3,
       pads: parsed.pads.map(migratePad),
-    }
+    })
+  }
+  if (parsed.version === 3) {
+    return toV4({
+      ...parsed,
+      pads: parsed.pads.map(migratePad),
+    })
   }
   if (parsed.version === 1 || parsed.version === 2) return applyV3(parsed)
   return null

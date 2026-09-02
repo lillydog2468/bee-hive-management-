@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BOTTOM_BOARD, FRAME_CONDITION_IDS, METAL_LID, SHALLOW_FRAME, WOODEN_LID } from '../domain/equipment.ts'
+import { BOTTOM_BOARD, FRAME_CONDITION_IDS, INNER_COVER, METAL_LID, SHALLOW_FRAME, WOODEN_LID } from '../domain/equipment.ts'
 import { Layout } from '../components/Layout.tsx'
 import { Stepper } from '../components/Stepper.tsx'
 import { inUseCount, unusedCount } from '../domain/inventory.ts'
@@ -76,6 +76,18 @@ export function StockScreen({ typeId }: { typeId: string }) {
             They are not this unused stock, and they cannot be moved to the L-yard or
             the far-side hive. Only add a number here if you own extra pieces besides
             those pads.
+            {type.id === BOTTOM_BOARD
+              ? ' Every hive also needs a bottom board. Spare unused bottoms stay at 0 until a count is given.'
+              : ''}
+          </p>
+        </div>
+      ) : null}
+
+      {type.id === INNER_COVER ? (
+        <div className="banner">
+          <p>
+            Every hive needs an inner cover. How many spare ones you own has not
+            been given, so unused stays 0 until you add a number.
           </p>
         </div>
       ) : null}
@@ -84,8 +96,8 @@ export function StockScreen({ typeId }: { typeId: string }) {
         <div className="banner">
           <p>
             Seven metal lids are on the L-yard full-size hives. Five are spare.
-            No lids are recorded for the outdoor 4-frame nucs or the far-side
-            5-frame nuc.
+            The outdoor nucs and the far-side nuc still need a lid chosen — no
+            extra metal lids were assumed for them.
           </p>
         </div>
       ) : null}
@@ -93,8 +105,9 @@ export function StockScreen({ typeId }: { typeId: string }) {
       {(FRAME_CONDITION_IDS as readonly string[]).includes(type.id) ? (
         <div className="banner">
           <p>
-            Frames are counted by condition, not as one pile. Only the used lot was
-            named as deep. The waxed and unbuilt lots were not named as shallow.
+            Frames are counted by condition, not as one pile. 50 deep used, 50
+            waxed ready for spring, 50 unbuilt ready for spring. Only the used lot
+            was named as deep. The other two were not named as deep or shallow.
           </p>
         </div>
       ) : null}

@@ -3,6 +3,7 @@ import {
   FRAME_CONDITION_IDS,
   GROUP_LABELS,
   GROUP_ORDER,
+  INNER_COVER,
   METAL_LID,
   SHALLOW_FRAME,
   WOODEN_LID,
@@ -37,8 +38,9 @@ export function UnusedScreen() {
           <p className="spotlight-kicker">Spare lids</p>
           <h2>Metal lids</h2>
           <p className="card-copy">
-            Seven are on the L-yard full-size hives. Five are spare. No lids are
-            recorded for the outdoor 4-frame nucs or the far-side 5-frame nuc.
+            Seven are on the L-yard full-size hives. Five are spare. The outdoor
+            4-frame nucs and the far-side 5-frame nuc still need a lid chosen —
+            no extra metal lids were assumed for them.
           </p>
           <ul className="kit-list">
             <KitRow
@@ -57,8 +59,9 @@ export function UnusedScreen() {
           <p className="spotlight-kicker">Frames by condition</p>
           <h2>Three lots</h2>
           <p className="card-copy">
-            Counted by condition, not as one pile. The used lot is deep. The other
-            two were not named as deep or shallow.
+            Counted by condition, not as one pile. 50 deep used. 50 waxed, ready
+            for spring. 50 unbuilt, ready for spring. The last two were not named
+            as deep or shallow.
           </p>
           <ul className="kit-list">
             {frameLots.map((type) => (
@@ -112,11 +115,15 @@ export function UnusedScreen() {
                   owned={state.owned[type.id] ?? 0}
                   used={inUseCount(inUse, type.id)}
                   note={
-                    type.id === BOTTOM_BOARD || type.id === WOODEN_LID
-                      ? 'garage pad pieces not counted here'
-                      : type.id === SHALLOW_FRAME
-                        ? 'no shallow count given'
-                        : undefined
+                    type.id === BOTTOM_BOARD
+                      ? 'on every hive; spare count not given. garage pad bottoms stay on those pads'
+                      : type.id === INNER_COVER
+                        ? 'on every hive; spare count not given'
+                        : type.id === WOODEN_LID
+                          ? 'garage pad lids stay on those pads and cannot be used elsewhere'
+                          : type.id === SHALLOW_FRAME
+                            ? 'no shallow count given'
+                            : undefined
                   }
                   onOpen={() => go({ page: 'stock', typeId: type.id })}
                 />
