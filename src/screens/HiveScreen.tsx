@@ -422,6 +422,32 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
       <section className="card">
         <div className="card-row">
           <div>
+            <h2>Inspections</h2>
+            <p className="card-copy">
+              Strength, brood you can see, the queen, and whether you added a
+              box, frames, or made a split.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="chip"
+            onClick={() => go({ page: 'inspect', hiveId: hive.id })}
+          >
+            Log inspection
+          </button>
+        </div>
+        {hive.inspections.length === 0 ? (
+          <p className="card-copy">No inspections logged yet.</p>
+        ) : (
+          <p className="card-copy">
+            {hive.inspections.length} recorded. Newest on the inspections page.
+          </p>
+        )}
+      </section>
+
+      <section className="card">
+        <div className="card-row">
+          <div>
             <h2>Splits</h2>
             <p className="card-copy">
               Record a split from this hive onto an empty pad. Date, this hive,

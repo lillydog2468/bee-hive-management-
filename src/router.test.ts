@@ -17,4 +17,14 @@ describe('router', () => {
       hiveId: 'hive-yard-1',
     })
   })
+
+  it('round-trips inspections routes', () => {
+    expect(parseHash(toHash({ page: 'inspections' }))).toEqual({
+      page: 'inspections',
+    })
+    expect(parseHash(toHash({ page: 'inspect', hiveId: 'hive-yard-1' }))).toEqual({
+      page: 'inspect',
+      hiveId: 'hive-yard-1',
+    })
+  })
 })

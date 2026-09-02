@@ -8,13 +8,15 @@ const TABS = [
   { page: 'unused' as const, label: 'Unused', hash: '#/unused' },
   { page: 'sites' as const, label: 'Sites', hash: '#/sites' },
   { page: 'hives' as const, label: 'Hives', hash: '#/hives' },
+  { page: 'inspections' as const, label: 'Inspect', hash: '#/inspections' },
 ]
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { route, state } = useStore()
   const wide = useWideLayout()
   const derivedSiteId = siteIdForRoute(route, state)
-  const selectedHiveId = route.page === 'hive' ? route.hiveId : null
+  const selectedHiveId =
+    route.page === 'hive' || route.page === 'inspect' ? route.hiveId : null
   const [pinnedSiteId, setPinnedSiteId] = useState<string | null>(null)
   const [syncedSiteId, setSyncedSiteId] = useState(derivedSiteId)
   if (syncedSiteId !== derivedSiteId) {
@@ -29,7 +31,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       ? 'sites'
       : route.page === 'hive' || route.page === 'hives'
         ? 'hives'
-        : route.page === 'more'
+        : route.page === 'inspections' || route.page === 'inspect'
+          ? 'inspections'
+          : route.page === 'more'
           ? 'more'
           : 'unused'
 
@@ -90,6 +94,9 @@ function siteIdForRoute(
 ): string {
   if (route.page === 'site' && route.siteId) return route.siteId
   if (route.page === 'hive' && route.hiveId) {
+    return state.hives.find((hive) => hive.id === route.hiveId)?.siteId ?? HOME_YARD
+  }
+  if (route.page === 'inspect' && route.hiveId) {
     return state.hives.find((hive) => hive.id === route.hiveId)?.siteId ?? HOME_YARD
   }
   return HOME_YARD

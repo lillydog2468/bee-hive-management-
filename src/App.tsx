@@ -4,6 +4,8 @@ import { AppShell } from './components/AppShell.tsx'
 import { useWideLayout } from './hooks/useWideLayout.ts'
 import { HiveScreen } from './screens/HiveScreen.tsx'
 import { HivesScreen } from './screens/HivesScreen.tsx'
+import { InspectionsScreen } from './screens/InspectionsScreen.tsx'
+import { HiveInspectScreen } from './screens/HiveInspectScreen.tsx'
 import { MoreScreen } from './screens/MoreScreen.tsx'
 import { SiteMapScreen } from './screens/SiteMapScreen.tsx'
 import { SitesScreen } from './screens/SitesScreen.tsx'
@@ -30,6 +32,10 @@ function Routes() {
       return <HivesScreen />
     case 'hive':
       return <HiveScreen hiveId={route.hiveId} />
+    case 'inspections':
+      return <InspectionsScreen />
+    case 'inspect':
+      return <HiveInspectScreen hiveId={route.hiveId} />
     case 'more':
       return <MoreScreen />
   }

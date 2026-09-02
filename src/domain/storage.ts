@@ -22,6 +22,7 @@ import type {
   EquipmentType,
   FeedingEntry,
   Hive,
+  Inspection,
   Pad,
   SplitRecord,
   StackLayer,
@@ -48,8 +49,9 @@ type LoosePad = Omit<Pad, 'lockedBottomAndLid'> & {
   lockedBottomAndLid?: boolean
 }
 
-type LooseHive = Omit<Hive, 'feedings'> & {
+type LooseHive = Omit<Hive, 'feedings' | 'inspections'> & {
   feedings?: FeedingEntry[]
+  inspections?: Inspection[]
 }
 
 export type LooseState = Omit<
@@ -72,7 +74,11 @@ function migratePad(pad: LoosePad): Pad {
 }
 
 function migrateHive(hive: LooseHive): Hive {
-  return { ...hive, feedings: hive.feedings ?? [] }
+  return {
+    ...hive,
+    feedings: hive.feedings ?? [],
+    inspections: hive.inspections ?? [],
+  }
 }
 
 function remapFrameLayer(layer: StackLayer): StackLayer {
@@ -145,7 +151,7 @@ function toV6(
 ): AppState {
   const next: AppState = {
     ...state,
-    version: 6,
+    version: 7,
     hives: state.hives.map(migrateHive),
     pads: addGapPad ? withHomeYardGapPad(state.pads) : state.pads,
     splits: state.splits ?? [],
@@ -205,7 +211,7 @@ function toV5(
 
 export function migrateState(parsed: LooseState): AppState | null {
   if (!Array.isArray(parsed.hives) || !Array.isArray(parsed.pads)) return null
-  if (parsed.version === 6) {
+  if (parsed.version === 7 || parsed.version === 6) {
     return toV6(
       {
         ...parsed,

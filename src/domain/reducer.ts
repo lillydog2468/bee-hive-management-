@@ -1,3 +1,4 @@
+import { isAllowedInspectionBox } from './inspection.ts'
 import { METAL_LID, nucBoxType } from './equipment.ts'
 import { defaultHiveName, defaultPadName } from './names.ts'
 import {
@@ -10,6 +11,7 @@ import { createSeedState } from './seed.ts'
 import { hasLockedBottomAndLid, hivePad } from './siteLocked.ts'
 import {
   addExtra,
+  countRole,
   removeLayer,
   setFeeding,
   setRoleCount,
@@ -20,8 +22,11 @@ import type {
   AppState,
   FeedingConfig,
   HiveKind,
+  Inspection,
   PadSize,
   Point,
+  QueenMarkColour,
+  QueenMarked,
 } from './types.ts'
 
 export type Action =
@@ -86,6 +91,28 @@ export type Action =
       newHiveId: string
     }
   | { type: 'add-site'; id: string; name: string }
+  | {
+      type: 'add-inspection'
+      hiveId: string
+      id: string
+      date: string
+      strength: 1 | 2 | 3 | 4 | 5
+      eggs: boolean
+      larvae: boolean
+      cappedBrood: boolean
+      droneCells: boolean
+      queenCells: boolean
+      queenSeen: boolean
+      queenMarked: QueenMarked
+      queenMarkColour: QueenMarkColour | null
+      notes: string
+      addedBoxTypeId: string | null
+      addedFrameTypeId: string | null
+      addedFrameCount: number
+      destPadId: string | null
+      splitId: string
+      newHiveId: string
+    }
   | { type: 'reset-seed' }
 
 function clamp(value: number, min: number, max: number): number {
@@ -385,6 +412,7 @@ function reduce(state: AppState, action: Action): AppState {
             y: action.y,
             padId: action.padId ?? null,
             feedings: [],
+            inspections: [],
           },
         ],
       }
@@ -502,6 +530,8 @@ function reduce(state: AppState, action: Action): AppState {
         ],
       }
     }
+    case 'add-inspection':
+      return addInspection(state, action)
     case 'reset-seed':
       return createSeedState()
   }
@@ -511,3 +541,114 @@ const DEEP_BOX_ID = 'deep-box'
 const SHALLOW_BOX_ID = 'shallow-box'
 const BOTTOM_BOARD_ID = 'bottom-board'
 const INNER_COVER_ID = 'inner-cover'
+
+type AddInspectionAction = Extract<Action, { type: 'add-inspection' }>
+
+function addInspection(state: AppState, action: AddInspectionAction): AppState {
+  const hive = state.hives.find((item) => item.id === action.hiveId)
+  if (!hive || !action.date) return state
+  if (action.strength < 1 || action.strength > 5) return state
+  if (action.destPadId) {
+    const pad = state.pads.find((item) => item.id === action.destPadId)
+    if (!pad || pad.occupiedHiveId) return state
+  }
+
+  let next = state
+  if (
+    action.addedBoxTypeId &&
+    isAllowedInspectionBox(hive.kind, action.addedBoxTypeId)
+  ) {
+    next = applyInspectionBox(next, hive.id, action.addedBoxTypeId)
+  }
+
+  const frameCount = Math.max(0, Math.round(action.addedFrameCount))
+  if (action.addedFrameTypeId && frameCount > 0) {
+    const typeOk = next.equipmentTypes.some(
+      (type) => type.id === action.addedFrameTypeId && type.group === 'frames',
+    )
+    if (typeOk) {
+      for (let i = 0; i < frameCount; i += 1) {
+        next = reduce(next, {
+          type: 'add-extra',
+          hiveId: hive.id,
+          extraId: ids.layer(),
+          typeId: action.addedFrameTypeId,
+        })
+      }
+    }
+  }
+
+  let splitId: string | null = null
+  if (action.destPadId) {
+    next = reduce(next, {
+      type: 'record-split',
+      id: action.splitId,
+      date: action.date,
+      sourceHiveId: hive.id,
+      destPadId: action.destPadId,
+      newHiveId: action.newHiveId,
+    })
+    splitId = next.splits.some((item) => item.id === action.splitId)
+      ? action.splitId
+      : null
+    if (!splitId) return state
+  }
+
+  const colour =
+    action.queenMarked === 'yes' ? action.queenMarkColour : null
+  const inspection: Inspection = {
+    id: action.id,
+    date: action.date,
+    strength: action.strength,
+    eggs: action.eggs,
+    larvae: action.larvae,
+    cappedBrood: action.cappedBrood,
+    droneCells: action.droneCells,
+    queenCells: action.queenCells,
+    queenSeen: action.queenSeen,
+    queenMarked: action.queenMarked,
+    queenMarkColour: colour,
+    notes: action.notes.trim(),
+    addedBoxTypeId: action.addedBoxTypeId,
+    addedFrameTypeId: frameCount > 0 ? action.addedFrameTypeId : null,
+    addedFrameCount: frameCount,
+    splitId,
+  }
+
+  return withHive(next, hive.id, (item) => ({
+    ...item,
+    inspections: [...item.inspections, inspection],
+  }))
+}
+
+function applyInspectionBox(
+  state: AppState,
+  hiveId: string,
+  typeId: string,
+): AppState {
+  const hive = state.hives.find((item) => item.id === hiveId)
+  if (!hive) return state
+  if (typeId === DEEP_BOX_ID) {
+    return reduce(state, {
+      type: 'set-brood',
+      hiveId,
+      count: countRole(hive.stack, 'brood') + 1,
+    })
+  }
+  if (typeId === SHALLOW_BOX_ID) {
+    return reduce(state, {
+      type: 'set-supers',
+      hiveId,
+      count: countRole(hive.stack, 'super') + 1,
+    })
+  }
+  if (hive.kind !== 'full-size' && typeId === nucBoxType(hive.kind)) {
+    return reduce(state, {
+      type: 'set-nuc-boxes',
+      hiveId,
+      count: countRole(hive.stack, 'nuc-box') + 1,
+    })
+  }
+  return state
+}
+

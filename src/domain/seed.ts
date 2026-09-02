@@ -77,7 +77,7 @@ function hive(
   y: number,
   stack: StackLayer[] = [],
 ): Hive {
-  return { id, name, siteId, kind, stack, x, y, padId: null, feedings: [] }
+  return { id, name, siteId, kind, stack, x, y, padId: null, feedings: [], inspections: [] }
 }
 
 function broodAndLid(n: number, brood: 1 | 2): StackLayer[] {
@@ -232,7 +232,7 @@ export function createSeedState(): AppState {
   owned[UNBUILT_SPRING_FRAME] = 50
 
   return {
-    version: 6,
+    version: 7,
     appName: 'Hives',
     equipmentTypes: BUILTIN_TYPES.map((type) => ({ ...type })),
     owned,

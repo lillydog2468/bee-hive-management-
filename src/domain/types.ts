@@ -53,6 +53,29 @@ export type FeedingEntry = {
   litres: number
 }
 
+export type QueenMarkColour = 'white' | 'yellow' | 'red' | 'green' | 'blue'
+
+export type QueenMarked = 'yes' | 'no' | 'unknown'
+
+export type Inspection = {
+  id: string
+  date: string
+  strength: 1 | 2 | 3 | 4 | 5
+  eggs: boolean
+  larvae: boolean
+  cappedBrood: boolean
+  droneCells: boolean
+  queenCells: boolean
+  queenSeen: boolean
+  queenMarked: QueenMarked
+  queenMarkColour: QueenMarkColour | null
+  notes: string
+  addedBoxTypeId: string | null
+  addedFrameTypeId: string | null
+  addedFrameCount: number
+  splitId: string | null
+}
+
 export type SplitRecord = {
   id: string
   date: string
@@ -75,6 +98,7 @@ export type Hive = {
   y: number
   padId: string | null
   feedings: FeedingEntry[]
+  inspections: Inspection[]
 }
 
 export type Pad = {
@@ -90,7 +114,7 @@ export type Pad = {
 }
 
 export type AppState = {
-  version: 6
+  version: 7
   appName: string
   equipmentTypes: EquipmentType[]
   owned: Record<string, number>

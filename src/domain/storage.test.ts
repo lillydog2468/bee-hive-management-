@@ -21,7 +21,7 @@ describe('storage migrate', () => {
       })),
     }
     const next = migrateState(v1)
-    expect(next?.version).toBe(6)
+    expect(next?.version).toBe(7)
     expect(next?.pads.filter((pad) => pad.lockedBottomAndLid)).toHaveLength(10)
     expect(unusedForType(next!, WOODEN_LID)).toBe(0)
     expect(unusedForType(next!, METAL_LID)).toBe(5)
@@ -69,6 +69,9 @@ describe('storage migrate', () => {
       next?.pads.some(
         (pad) => pad.id === L_YARD_GAP_PAD.id && pad.siteId === HOME_YARD,
       ),
+    ).toBe(true)
+    expect(
+      next?.hives.every((hive) => Array.isArray(hive.inspections)),
     ).toBe(true)
   })
 })

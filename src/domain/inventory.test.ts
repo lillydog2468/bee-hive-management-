@@ -598,4 +598,115 @@ describe('reducer', () => {
     })
     expect(state.hives.find((item) => item.id === 'hive-tf-1')?.name).toBe('Top field 1')
   })
+
+  it('starts with no inspections', () => {
+    const state = createSeedState()
+    expect(state.hives.every((hive) => hive.inspections.length === 0)).toBe(true)
+  })
+
+  it('logs an inspection and newest-first history without inventing extras', () => {
+    let state = createSeedState()
+    state = reducer(state, {
+      type: 'add-inspection',
+      hiveId: 'hive-yard-1',
+      id: 'insp-1',
+      date: '2026-09-01',
+      strength: 3,
+      eggs: true,
+      larvae: true,
+      cappedBrood: false,
+      droneCells: false,
+      queenCells: false,
+      queenSeen: true,
+      queenMarked: 'yes',
+      queenMarkColour: 'blue',
+      notes: 'Quiet on the comb',
+      addedBoxTypeId: null,
+      addedFrameTypeId: null,
+      addedFrameCount: 0,
+      destPadId: null,
+      splitId: 'split-unused',
+      newHiveId: 'hive-unused',
+    })
+    const hive = state.hives.find((item) => item.id === 'hive-yard-1')
+    expect(hive?.inspections).toHaveLength(1)
+    expect(hive?.inspections[0]).toMatchObject({
+      date: '2026-09-01',
+      strength: 3,
+      larvae: true,
+      queenMarkColour: 'blue',
+      notes: 'Quiet on the comb',
+      splitId: null,
+    })
+    expect(state.splits).toHaveLength(0)
+  })
+
+  it('adds a deep from an inspection and takes it from unused', () => {
+    let state = createSeedState()
+    expect(unusedForType(state, DEEP_BOX)).toBe(8)
+    state = reducer(state, {
+      type: 'add-inspection',
+      hiveId: 'hive-yard-1',
+      id: 'insp-box',
+      date: '2026-09-02',
+      strength: 4,
+      eggs: false,
+      larvae: false,
+      cappedBrood: false,
+      droneCells: false,
+      queenCells: false,
+      queenSeen: false,
+      queenMarked: 'unknown',
+      queenMarkColour: 'red',
+      notes: '',
+      addedBoxTypeId: DEEP_BOX,
+      addedFrameTypeId: null,
+      addedFrameCount: 0,
+      destPadId: null,
+      splitId: 's',
+      newHiveId: 'h',
+    })
+    expect(countRole(state.hives.find((item) => item.id === 'hive-yard-1')!.stack, 'brood')).toBe(2)
+    expect(unusedForType(state, DEEP_BOX)).toBe(7)
+    expect(
+      state.hives.find((item) => item.id === 'hive-yard-1')?.inspections[0]
+        .queenMarkColour,
+    ).toBeNull()
+  })
+
+  it('adds frames from an inspection and records a split onto an empty pad', () => {
+    let state = createSeedState()
+    expect(unusedForType(state, DEEP_USED_FRAME)).toBe(50)
+    state = reducer(state, {
+      type: 'add-inspection',
+      hiveId: 'hive-yard-1',
+      id: 'insp-split',
+      date: '2026-09-02',
+      strength: 2,
+      eggs: false,
+      larvae: false,
+      cappedBrood: true,
+      droneCells: false,
+      queenCells: true,
+      queenSeen: false,
+      queenMarked: 'no',
+      queenMarkColour: null,
+      notes: '',
+      addedBoxTypeId: null,
+      addedFrameTypeId: DEEP_USED_FRAME,
+      addedFrameCount: 3,
+      destPadId: 'pad-yard-gap',
+      splitId: 'split-insp',
+      newHiveId: 'hive-from-insp',
+    })
+    expect(unusedForType(state, DEEP_USED_FRAME)).toBe(47)
+    expect(state.splits).toHaveLength(1)
+    expect(state.splits[0].id).toBe('split-insp')
+    expect(state.pads.find((pad) => pad.id === 'pad-yard-gap')?.occupiedHiveId).toBe(
+      'hive-from-insp',
+    )
+    expect(
+      state.hives.find((item) => item.id === 'hive-yard-1')?.inspections[0].splitId,
+    ).toBe('split-insp')
+  })
 })
