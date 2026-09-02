@@ -34,6 +34,17 @@ export function MoreScreen() {
       </section>
 
       <section className="card">
+        <h2>Analytics</h2>
+        <p className="card-copy">
+          Charts from inspections, syrup, splits, unused kit and hives per yard.
+          Empty until you log something.
+        </p>
+        <a className="secondary link-btn" href="#/analytics">
+          Open analytics
+        </a>
+      </section>
+
+      <section className="card">
         <h2>Add a kit type</h2>
         <p className="card-copy">
           Built-in types cover Langstroth boxes, frames, boards, lids and feeders. Add another type if you want to count it later.

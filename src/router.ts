@@ -7,6 +7,7 @@ export type Route =
   | { page: 'hive'; hiveId: string }
   | { page: 'inspections' }
   | { page: 'inspect'; hiveId: string }
+  | { page: 'analytics' }
   | { page: 'more' }
 
 export function parseHash(hash: string): Route {
@@ -21,6 +22,7 @@ export function parseHash(hash: string): Route {
     return { page: 'inspect', hiveId: parts[1] }
   }
   if (parts[0] === 'inspections') return { page: 'inspections' }
+  if (parts[0] === 'analytics') return { page: 'analytics' }
   if (parts[0] === 'kit' && parts[1]) return { page: 'stock', typeId: parts[1] }
   if (parts[0] === 'more') return { page: 'more' }
   return { page: 'unused' }
@@ -44,6 +46,8 @@ export function toHash(route: Route): string {
       return '#/inspections'
     case 'inspect':
       return `#/inspections/${route.hiveId}`
+    case 'analytics':
+      return '#/analytics'
     case 'more':
       return '#/more'
   }

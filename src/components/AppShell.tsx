@@ -52,6 +52,13 @@ export function AppShell({ children }: { children: ReactNode }) {
               {tab.label}
             </a>
           ))}
+          <a
+            href="#/analytics"
+            className={route.page === 'analytics' ? 'tab is-active' : 'tab'}
+            aria-current={route.page === 'analytics' ? 'page' : undefined}
+          >
+            Analytics
+          </a>
         </nav>
         <a className="more-link" href="#/more">
           More

@@ -27,4 +27,10 @@ describe('router', () => {
       hiveId: 'hive-yard-1',
     })
   })
+
+  it('round-trips analytics', () => {
+    expect(parseHash(toHash({ page: 'analytics' }))).toEqual({
+      page: 'analytics',
+    })
+  })
 })

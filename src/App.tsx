@@ -5,6 +5,7 @@ import { useWideLayout } from './hooks/useWideLayout.ts'
 import { HiveScreen } from './screens/HiveScreen.tsx'
 import { HivesScreen } from './screens/HivesScreen.tsx'
 import { InspectionsScreen } from './screens/InspectionsScreen.tsx'
+import { AnalyticsScreen } from './screens/AnalyticsScreen.tsx'
 import { HiveInspectScreen } from './screens/HiveInspectScreen.tsx'
 import { MoreScreen } from './screens/MoreScreen.tsx'
 import { SiteMapScreen } from './screens/SiteMapScreen.tsx'
@@ -36,6 +37,8 @@ function Routes() {
       return <InspectionsScreen />
     case 'inspect':
       return <HiveInspectScreen hiveId={route.hiveId} />
+    case 'analytics':
+      return <AnalyticsScreen />
     case 'more':
       return <MoreScreen />
   }

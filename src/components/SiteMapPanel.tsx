@@ -21,8 +21,11 @@ export function SiteMapPanel({
   const { state, dispatch, go } = useStore()
   const site = state.sites.find((item) => item.id === siteId)
   const [editShape, setEditShape] = useState(false)
+  const [removing, setRemoving] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [padId, setPadId] = useState<string | null>(null)
+  const [pendingHiveId, setPendingHiveId] = useState<string | null>(null)
+  const [pendingPadId, setPendingPadId] = useState<string | null>(null)
 
   if (!site) {
     return <p className="lede">That site is not in this list.</p>
@@ -31,6 +34,8 @@ export function SiteMapPanel({
   const hives = state.hives.filter((hive) => hive.siteId === site.id)
   const pads = state.pads.filter((pad) => pad.siteId === site.id)
   const openPad = pads.find((pad) => pad.id === padId)
+  const pendingHive = state.hives.find((hive) => hive.id === pendingHiveId)
+  const pendingPad = state.pads.find((pad) => pad.id === pendingPadId)
   const movable = state.hives.filter((hive) => hive.padId !== padId)
 
   function addHive(kind: HiveKind, onPad?: string) {
@@ -96,9 +101,22 @@ export function SiteMapPanel({
           <button
             type="button"
             className={editShape ? 'chip is-on' : 'chip'}
-            onClick={() => setEditShape((value) => !value)}
+            onClick={() => {
+              setEditShape((value) => !value)
+              setRemoving(false)
+            }}
           >
             {editShape ? 'Done tweaking shape' : 'Tweak yard shape'}
+          </button>
+          <button
+            type="button"
+            className={removing ? 'chip is-on' : 'chip'}
+            onClick={() => {
+              setRemoving((value) => !value)
+              setEditShape(false)
+            }}
+          >
+            {removing ? 'Done removing' : 'Remove'}
           </button>
           <button className="chip" type="button" onClick={() => setAddOpen(true)}>
             Add
@@ -106,7 +124,11 @@ export function SiteMapPanel({
         </div>
       </div>
 
-      {editShape ? (
+      {removing ? (
+        <p className="hint">
+          Tap a hive or an empty pad to delete it. You will be asked to confirm.
+        </p>
+      ) : editShape ? (
         <p className="hint">
           Drag the corners of the outline. The home yard starts as an L you can
           change as the ground changes.
@@ -153,8 +175,10 @@ export function SiteMapPanel({
           onMoveHive={(hiveId, x, y) => dispatch({ type: 'set-hive-pos', hiveId, x, y })}
           onMovePad={(id, x, y) => dispatch({ type: 'set-pad-pos', padId: id, x, y })}
           onMoveVertex={moveVertex}
-          onOpenHive={(id) => go({ page: 'hive', hiveId: id })}
-          onOpenPad={setPadId}
+          onOpenHive={(id) =>
+            removing ? setPendingHiveId(id) : go({ page: 'hive', hiveId: id })
+          }
+          onOpenPad={(id) => (removing ? setPendingPadId(id) : setPadId(id))}
         />
       </div>
 
@@ -237,8 +261,49 @@ export function SiteMapPanel({
             className="danger-text"
             type="button"
             onClick={() => {
-              dispatch({ type: 'remove-pad', padId: openPad.id })
+              setPendingPadId(openPad.id)
               setPadId(null)
+            }}
+          >
+            Remove pad
+          </button>
+        </Sheet>
+      ) : null}
+
+      {pendingHive ? (
+        <Sheet title="Remove hive?" onClose={() => setPendingHiveId(null)}>
+          <p className="sheet-lede">
+            Unused-pool kit on {pendingHive.name} returns to unused. A garage
+            pad’s bottom board and wooden lid stay on that pad.
+          </p>
+          <button
+            className="danger"
+            type="button"
+            onClick={() => {
+              dispatch({ type: 'remove-hive', hiveId: pendingHive.id })
+              setPendingHiveId(null)
+              setRemoving(false)
+            }}
+          >
+            Remove hive
+          </button>
+        </Sheet>
+      ) : null}
+
+      {pendingPad ? (
+        <Sheet title="Remove pad?" onClose={() => setPendingPadId(null)}>
+          <p className="sheet-lede">
+            {pendingPad.lockedBottomAndLid
+              ? 'This pad’s bottom board and wooden lid stay with the pad. They are not unused kit, and they will not be added to unused when the pad is removed.'
+              : 'This empty pad will be removed.'}
+          </p>
+          <button
+            className="danger"
+            type="button"
+            onClick={() => {
+              dispatch({ type: 'remove-pad', padId: pendingPad.id })
+              setPendingPadId(null)
+              setRemoving(false)
             }}
           >
             Remove pad

@@ -709,4 +709,21 @@ describe('reducer', () => {
       state.hives.find((item) => item.id === 'hive-yard-1')?.inspections[0].splitId,
     ).toBe('split-insp')
   })
+
+  it('returns unused-pool kit when a hive is removed', () => {
+    let state = createSeedState()
+    expect(unusedForType(state, DEEP_BOX)).toBe(8)
+    state = reducer(state, { type: 'remove-hive', hiveId: 'hive-yard-3' })
+    expect(unusedForType(state, DEEP_BOX)).toBe(10)
+    expect(state.hives.some((hive) => hive.id === 'hive-yard-3')).toBe(false)
+  })
+
+  it('does not dump garage pad kit into unused when the pad is removed', () => {
+    let state = createSeedState()
+    expect(unusedForType(state, WOODEN_LID)).toBe(0)
+    state = reducer(state, { type: 'remove-pad', padId: 'pad-garage-1' })
+    expect(state.pads.some((pad) => pad.id === 'pad-garage-1')).toBe(false)
+    expect(unusedForType(state, WOODEN_LID)).toBe(0)
+    expect(state.pads.filter((pad) => pad.lockedBottomAndLid)).toHaveLength(9)
+  })
 })
