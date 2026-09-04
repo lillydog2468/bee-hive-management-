@@ -92,6 +92,27 @@ export const GROUP_LABELS: Record<EquipmentGroup, string> = {
   other: 'Other',
 }
 
+export const ADD_TO_LABELS: Record<EquipmentGroup, string> = {
+  'hive-boxes': 'Add to hive boxes',
+  frames: 'Add to frames',
+  'tops-and-bottoms': 'Add to tops and bottoms',
+  other: 'Add to other',
+}
+
+export function parseEquipmentGroup(
+  value: string | undefined,
+): EquipmentGroup | undefined {
+  if (
+    value === 'hive-boxes' ||
+    value === 'frames' ||
+    value === 'tops-and-bottoms' ||
+    value === 'other'
+  ) {
+    return value
+  }
+  return undefined
+}
+
 export const GROUP_ORDER: EquipmentGroup[] = [
   'hive-boxes',
   'frames',

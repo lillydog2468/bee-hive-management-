@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import {
+  ADD_TO_LABELS,
   BOTTOM_BOARD,
   DEEP_USED_FRAME,
+  defaultUnitForGroup,
   GROUP_LABELS,
   GROUP_ORDER,
   INNER_COVER,
@@ -26,89 +28,125 @@ import type { EquipmentGroup, FrameTotal } from '../domain/types.ts'
 import { useStore } from '../state/context.ts'
 
 export function StockScreen({ typeId }: { typeId: string }) {
-  const { state, dispatch, inUse, go, photos, setTypePhoto } = useStore()
+  const { state, dispatch, inUse, go, photos, setTypePhoto, route } = useStore()
   const type = state.equipmentTypes.find((item) => item.id === typeId)
+  const lockedGroup =
+    route.page === 'stock' && route.typeId === 'new' ? route.group : undefined
   const [newName, setNewName] = useState('')
-  const [newGroup, setNewGroup] = useState<EquipmentGroup>('other')
-  const [newUnit, setNewUnit] = useState('')
+  const [newGroup, setNewGroup] = useState<EquipmentGroup>(
+    lockedGroup ?? 'other',
+  )
+  const [newOwned, setNewOwned] = useState(0)
+  const [newPhoto, setNewPhoto] = useState<string | null>(null)
   const [newFrameTotal, setNewFrameTotal] = useState<FrameTotal>(null)
   const [editingOwned, setEditingOwned] = useState(false)
   const [ownedDraft, setOwnedDraft] = useState('')
-  const [draftTypeId, setDraftTypeId] = useState(typeId)
+  const [draftTypeId, setDraftTypeId] = useState(
+    typeId === 'new' ? `new:${lockedGroup ?? ''}` : typeId,
+  )
   const [confirmDelete, setConfirmDelete] = useState(false)
-  if (draftTypeId !== typeId) {
-    setDraftTypeId(typeId)
+  const formKey = typeId === 'new' ? `new:${lockedGroup ?? ''}` : typeId
+  if (draftTypeId !== formKey) {
+    setDraftTypeId(formKey)
     setEditingOwned(false)
     setOwnedDraft('')
     setConfirmDelete(false)
+    setNewName('')
+    setNewOwned(0)
+    setNewPhoto(null)
+    setNewFrameTotal(null)
+    setNewGroup(lockedGroup ?? 'other')
   }
 
   if (typeId === 'new') {
+    const section = lockedGroup ?? newGroup
     return (
       <Layout
-        title="Add a type"
-        subtitle="Add only what you own or want to count. Pick which section it belongs in. 0 is fine until you have a number."
+        title={lockedGroup ? ADD_TO_LABELS[lockedGroup] : 'Add a type'}
+        subtitle="Name and how many you own. A photo is optional. 0 is fine until you have counted."
         back={{ label: 'Unused kit', href: '#/unused' }}
       >
+        {lockedGroup ? (
+          <p className="lede">
+            This goes in {GROUP_LABELS[lockedGroup]}.
+          </p>
+        ) : (
+          <label className="field">
+            <span>Section</span>
+            <select
+              value={newGroup}
+              onChange={(event) =>
+                setNewGroup(event.target.value as EquipmentGroup)
+              }
+            >
+              {GROUP_ORDER.map((group) => (
+                <option key={group} value={group}>
+                  {GROUP_LABELS[group]}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className="field">
           <span>Name</span>
           <input
             value={newName}
             onChange={(event) => setNewName(event.target.value)}
-            placeholder="e.g. Deep frames, new waxed"
+            placeholder={nameHint(section)}
             autoComplete="off"
           />
         </label>
-        <label className="field">
-          <span>Section</span>
-          <select
-            value={newGroup}
-            onChange={(event) =>
-              setNewGroup(event.target.value as EquipmentGroup)
-            }
-          >
-            {GROUP_ORDER.map((group) => (
-              <option key={group} value={group}>
-                {GROUP_LABELS[group]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span>Unit (optional)</span>
-          <input
-            value={newUnit}
-            onChange={(event) => setNewUnit(event.target.value)}
-            placeholder="e.g. boxes, frames, each"
-            autoComplete="off"
-          />
-        </label>
-        <fieldset className="field">
-          <legend>Counts towards frame totals (optional)</legend>
-          <div className="segment wrap-segment">
-            <button
-              type="button"
-              className={newFrameTotal === null ? 'is-on' : ''}
-              onClick={() => setNewFrameTotal(null)}
-            >
-              Neither
-            </button>
-            <button
-              type="button"
-              className={newFrameTotal === 'deep' ? 'is-on' : ''}
-              onClick={() => setNewFrameTotal('deep')}
-            >
-              Deep frames total
-            </button>
-            <button
-              type="button"
-              className={newFrameTotal === 'shallow' ? 'is-on' : ''}
-              onClick={() => setNewFrameTotal('shallow')}
-            >
-              Shallow frames total
-            </button>
+        <div className="card">
+          <div className="card-row">
+            <div>
+              <p className="card-kicker">Owned count</p>
+              <p className="card-copy">How many of this type you have. Leave 0 until you count.</p>
+            </div>
+            <Stepper
+              label="owned count"
+              value={newOwned}
+              max={999}
+              onChange={setNewOwned}
+            />
           </div>
-        </fieldset>
+        </div>
+        <div className="card">
+          <p className="card-kicker">Photo (optional)</p>
+          <PhotoField
+            photo={newPhoto ?? undefined}
+            onChange={(dataUrl) => setNewPhoto(dataUrl)}
+            onRemove={() => setNewPhoto(null)}
+            addLabel="Add your photo of this part"
+          />
+        </div>
+        {section === 'frames' ? (
+          <fieldset className="field">
+            <legend>Counts towards frame totals (optional)</legend>
+            <div className="segment wrap-segment">
+              <button
+                type="button"
+                className={newFrameTotal === null ? 'is-on' : ''}
+                onClick={() => setNewFrameTotal(null)}
+              >
+                Neither
+              </button>
+              <button
+                type="button"
+                className={newFrameTotal === 'deep' ? 'is-on' : ''}
+                onClick={() => setNewFrameTotal('deep')}
+              >
+                Deep frames total
+              </button>
+              <button
+                type="button"
+                className={newFrameTotal === 'shallow' ? 'is-on' : ''}
+                onClick={() => setNewFrameTotal('shallow')}
+              >
+                Shallow frames total
+              </button>
+            </div>
+          </fieldset>
+        ) : null}
         <button
           className="primary"
           type="button"
@@ -119,11 +157,13 @@ export function StockScreen({ typeId }: { typeId: string }) {
               type: 'add-equipment-type',
               id,
               name: newName.trim(),
-              group: newGroup,
-              unit: newUnit.trim(),
-              frameTotal: newFrameTotal,
+              group: section,
+              unit: defaultUnitForGroup(section),
+              frameTotal: section === 'frames' ? newFrameTotal : null,
+              owned: newOwned,
             })
-            go({ page: 'stock', typeId: id })
+            if (newPhoto) setTypePhoto(id, newPhoto)
+            go({ page: 'unused' })
           }}
         >
           Add type
@@ -445,4 +485,11 @@ export function StockScreen({ typeId }: { typeId: string }) {
       ) : null}
     </Layout>
   )
+}
+
+function nameHint(group: EquipmentGroup): string {
+  if (group === 'hive-boxes') return 'e.g. 8-frame nuc box'
+  if (group === 'frames') return 'e.g. Deep frames, new waxed'
+  if (group === 'tops-and-bottoms') return 'e.g. Crown board'
+  return 'e.g. Queen excluder'
 }

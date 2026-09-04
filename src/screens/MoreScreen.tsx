@@ -47,12 +47,12 @@ export function MoreScreen() {
       <section className="card">
         <h2>Add a kit type</h2>
         <p className="card-copy">
-          Your list is yours: add a type, pick hive boxes, frames, tops and
-          bottoms, or other, type an owned count, and delete anything you do
-          not want. Unused and Stock only show types you have added or kept.
+          Add a type from each section on Unused kit — hive boxes, frames, tops
+          and bottoms, or other. Name, owned count, and an optional photo.
+          Delete anything you do not want.
         </p>
-        <a className="secondary link-btn" href="#/kit/new">
-          Add a type
+        <a className="secondary link-btn" href="#/unused">
+          Open unused kit
         </a>
       </section>
 

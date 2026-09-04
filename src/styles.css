@@ -118,9 +118,18 @@ ul {
 .card-row,
 .group-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.group-head h2 {
+  margin: 0;
+}
+
+.group-head .chip {
+  flex: 0 0 auto;
 }
 
 .eyebrow,

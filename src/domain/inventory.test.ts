@@ -282,6 +282,23 @@ describe('reducer', () => {
     )
   })
 
+  it('adds a named type into hive boxes with an owned count', () => {
+    let state = createSeedState()
+    state = reducer(state, {
+      type: 'add-equipment-type',
+      id: 'custom-8-frame',
+      name: '8-frame nuc box',
+      group: 'hive-boxes',
+      owned: 3,
+    })
+    expect(
+      state.equipmentTypes.find((type) => type.id === 'custom-8-frame')?.group,
+    ).toBe('hive-boxes')
+    expect(state.owned['custom-8-frame']).toBe(3)
+    expect(unusedForType(state, 'custom-8-frame')).toBe(3)
+    expect(state.owned[DEEP_BOX]).toBe(20)
+  })
+
   it('moves a hive onto a garage pad without taking pad kit from unused', () => {
     let state = createSeedState()
     state = reducer(state, {

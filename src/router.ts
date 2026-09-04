@@ -1,6 +1,9 @@
+import type { EquipmentGroup } from './domain/types.ts'
+import { parseEquipmentGroup } from './domain/equipment.ts'
+
 export type Route =
   | { page: 'unused' }
-  | { page: 'stock'; typeId: string }
+  | { page: 'stock'; typeId: string; group?: EquipmentGroup }
   | { page: 'sites' }
   | { page: 'site'; siteId: string }
   | { page: 'hives' }
@@ -23,6 +26,9 @@ export function parseHash(hash: string): Route {
   }
   if (parts[0] === 'inspections') return { page: 'inspections' }
   if (parts[0] === 'analytics') return { page: 'analytics' }
+  if (parts[0] === 'kit' && parts[1] === 'new') {
+    return { page: 'stock', typeId: 'new', group: parseEquipmentGroup(parts[2]) }
+  }
   if (parts[0] === 'kit' && parts[1]) return { page: 'stock', typeId: parts[1] }
   if (parts[0] === 'more') return { page: 'more' }
   return { page: 'unused' }
@@ -33,7 +39,9 @@ export function toHash(route: Route): string {
     case 'unused':
       return '#/unused'
     case 'stock':
-      return `#/kit/${route.typeId}`
+      return route.typeId === 'new' && route.group
+        ? `#/kit/new/${route.group}`
+        : `#/kit/${route.typeId}`
     case 'sites':
       return '#/sites'
     case 'site':

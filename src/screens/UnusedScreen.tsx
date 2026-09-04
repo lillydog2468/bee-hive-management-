@@ -1,4 +1,5 @@
 import {
+  ADD_TO_LABELS,
   BOTTOM_BOARD,
   DEEP_BOX,
   DEEP_USED_FRAME,
@@ -40,12 +41,8 @@ export function UnusedScreen() {
   return (
     <Layout
       title="Unused kit"
-      subtitle="Your list only, in four sections: hive boxes, frames, tops and bottoms, and other. Add types, type owned counts, and delete anything you do not use. Unused is owned minus what is on a hive."
+      subtitle="Your list only, in four sections. Add a type to any section, type an owned count, and delete anything you do not use. Unused is owned minus what is on a hive."
     >
-      <a className="primary link-btn" href="#/kit/new">
-        Add a type
-      </a>
-
       {showDeepTotal || showShallowTotal ? (
         <section className="group">
           <p className="spotlight-kicker">Frame totals</p>
@@ -94,7 +91,16 @@ export function UnusedScreen() {
         const types = state.equipmentTypes.filter((type) => type.group === group)
         return (
           <section key={group} className="group">
-            <h2>{GROUP_LABELS[group]}</h2>
+            <div className="group-head">
+              <h2>{GROUP_LABELS[group]}</h2>
+              <button
+                type="button"
+                className="chip"
+                onClick={() => go({ page: 'stock', typeId: 'new', group })}
+              >
+                {ADD_TO_LABELS[group]}
+              </button>
+            </div>
             {types.length === 0 ? (
               <p className="card-copy">None in this section yet.</p>
             ) : (
@@ -116,8 +122,9 @@ export function UnusedScreen() {
       })}
 
       <p className="footnote">
-        Tap a type to edit its name, owned count, or delete it. Assigning kit to
-        a hive takes it out of unused; taking it off a hive returns it.
+        Add to a section with the button on that heading. Tap a type to edit its
+        name, owned count, photo, or delete it. Assigning kit to a hive takes it
+        out of unused; taking it off a hive returns it.
       </p>
     </Layout>
   )

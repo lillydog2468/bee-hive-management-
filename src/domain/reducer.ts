@@ -46,6 +46,7 @@ export type Action =
       group?: EquipmentGroup
       unit?: string
       frameTotal?: FrameTotal
+      owned?: number
     }
   | {
       type: 'update-equipment-type'
@@ -238,7 +239,10 @@ function reduce(state: AppState, action: Action): AppState {
             frameTotal,
           },
         ],
-        owned: { ...state.owned, [action.id]: 0 },
+        owned: {
+          ...state.owned,
+          [action.id]: Math.max(0, Math.round(action.owned ?? 0)),
+        },
       }
     }
     case 'update-equipment-type': {

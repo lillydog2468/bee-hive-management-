@@ -33,4 +33,25 @@ describe('router', () => {
       page: 'analytics',
     })
   })
+
+  it('round-trips add-to-section kit routes', () => {
+    expect(
+      parseHash(toHash({ page: 'stock', typeId: 'new', group: 'hive-boxes' })),
+    ).toEqual({ page: 'stock', typeId: 'new', group: 'hive-boxes' })
+    expect(parseHash('#/kit/new/frames')).toEqual({
+      page: 'stock',
+      typeId: 'new',
+      group: 'frames',
+    })
+    expect(parseHash('#/kit/new/tops-and-bottoms')).toEqual({
+      page: 'stock',
+      typeId: 'new',
+      group: 'tops-and-bottoms',
+    })
+    expect(parseHash('#/kit/new/other')).toEqual({
+      page: 'stock',
+      typeId: 'new',
+      group: 'other',
+    })
+  })
 })
