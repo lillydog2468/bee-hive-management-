@@ -1,0 +1,129 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - cursor/hives-tracker-app-919c
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  deployments: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Test
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  unlock-pages:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Allow every branch to deploy to github-pages
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo
+            await github.rest.repos.createOrUpdateEnvironment({
+              owner,
+              repo,
+              environment_name: 'github-pages',
+              deployment_branch_policy: null,
+            })
+
+  deploy:
+    needs: [build, unlock-pages]
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Enable GitHub Pages if needed
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo
+            try {
+              await github.rest.repos.getPages({ owner, repo })
+            } catch (error) {
+              if (error.status !== 404) throw error
+              await github.rest.repos.createPagesSite({
+                owner,
+                repo,
+                build_type: 'workflow',
+              })
+            }
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  publish-gh-pages:
+    needs: [build, deploy]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Publish dist to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          force_orphan: true
+      - name: Point GitHub Pages at gh-pages
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo
+            const source = { branch: 'gh-pages', path: '/' }
+            try {
+              await github.rest.repos.updateInformationAboutPagesSite({
+                owner,
+                repo,
+                build_type: 'legacy',
+                source,
+              })
+            } catch (error) {
+              if (error.status !== 404) throw error
+              await github.rest.repos.createPagesSite({
+                owner,
+                repo,
+                build_type: 'legacy',
+                source,
+              })
+            }
