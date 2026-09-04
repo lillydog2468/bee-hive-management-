@@ -52,17 +52,28 @@ export function markedLabel(marked: QueenMarked): string {
   return 'Unknown'
 }
 
-export function boxChoicesForHive(kind: HiveKind): { id: string; label: string }[] {
-  if (kind === 'full-size') {
-    return [
-      { id: DEEP_BOX, label: 'Deep box' },
-      { id: SHALLOW_BOX, label: 'Shallow box' },
-    ]
-  }
-  if (kind === 'nuc-4') return [{ id: NUC_BOX_4, label: '4-frame nuc box' }]
-  return [{ id: NUC_BOX_5, label: '5-frame nuc box' }]
+export function boxChoicesForHive(
+  kind: HiveKind,
+  types?: { id: string }[],
+): { id: string; label: string }[] {
+  const choices =
+    kind === 'full-size'
+      ? [
+          { id: DEEP_BOX, label: 'Deep box' },
+          { id: SHALLOW_BOX, label: 'Shallow box' },
+        ]
+      : kind === 'nuc-4'
+        ? [{ id: NUC_BOX_4, label: '4-frame nuc box' }]
+        : [{ id: NUC_BOX_5, label: '5-frame nuc box' }]
+  if (!types) return choices
+  const ids = new Set(types.map((type) => type.id))
+  return choices.filter((choice) => ids.has(choice.id))
 }
 
-export function isAllowedInspectionBox(kind: HiveKind, typeId: string): boolean {
-  return boxChoicesForHive(kind).some((choice) => choice.id === typeId)
+export function isAllowedInspectionBox(
+  kind: HiveKind,
+  typeId: string,
+  types?: { id: string }[],
+): boolean {
+  return boxChoicesForHive(kind, types).some((choice) => choice.id === typeId)
 }

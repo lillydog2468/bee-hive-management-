@@ -54,7 +54,7 @@ export function HiveInspectScreen({ hiveId }: { hiveId: string }) {
   }
 
   const site = state.sites.find((item) => item.id === hive.siteId)
-  const boxes = boxChoicesForHive(hive.kind)
+  const boxes = boxChoicesForHive(hive.kind, state.equipmentTypes)
   const frameTypes = state.equipmentTypes.filter((type) => type.group === 'frames')
   const emptyPads = state.pads.filter((pad) => !pad.occupiedHiveId)
   const history = sortInspectionsNewestFirst(hive.inspections)

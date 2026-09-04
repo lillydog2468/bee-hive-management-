@@ -1,4 +1,4 @@
-import type { EquipmentGroup, EquipmentType } from './types.ts'
+import type { EquipmentGroup, EquipmentType, FrameTotal } from './types.ts'
 
 export const DEEP_BOX = 'deep-box'
 export const SHALLOW_BOX = 'shallow-box'
@@ -15,114 +15,83 @@ export const WOODEN_LID = 'wooden-lid'
 export const ROUND_FEEDER = 'round-feeder'
 export const FEEDING_JAR = 'feeding-jar'
 
-export const BUILTIN_TYPES: EquipmentType[] = [
-  {
-    id: DEEP_BOX,
-    name: 'Deep box (10-frame)',
-    shortName: 'Deep box',
-    group: 'boxes',
-    builtIn: true,
-  },
-  {
-    id: SHALLOW_BOX,
-    name: 'Shallow box (10-frame)',
-    shortName: 'Shallow box',
-    group: 'boxes',
-    builtIn: true,
-  },
-  {
-    id: NUC_BOX_4,
-    name: '4-frame nuc box',
-    shortName: '4-frame nuc',
-    group: 'boxes',
-    builtIn: true,
-  },
-  {
-    id: NUC_BOX_5,
-    name: '5-frame nuc box',
-    shortName: '5-frame nuc',
-    group: 'boxes',
-    builtIn: true,
-  },
-  {
-    id: DEEP_USED_FRAME,
-    name: 'Deep used frames',
-    shortName: 'Deep used',
-    group: 'frames',
-    builtIn: true,
-  },
-  {
-    id: WAXED_SPRING_FRAME,
-    name: 'Waxed, ready for spring',
-    shortName: 'Waxed (spring)',
-    group: 'frames',
-    builtIn: true,
-  },
-  {
-    id: UNBUILT_SPRING_FRAME,
-    name: 'Unbuilt, ready for spring',
-    shortName: 'Unbuilt (spring)',
-    group: 'frames',
-    builtIn: true,
-  },
-  {
-    id: SHALLOW_FRAME,
-    name: 'Shallow frames',
-    shortName: 'Shallow frames',
-    group: 'frames',
-    builtIn: true,
-  },
-  {
-    id: BOTTOM_BOARD,
-    name: 'Bottom board',
-    shortName: 'Bottom board',
-    group: 'parts',
-    builtIn: true,
-  },
-  {
-    id: INNER_COVER,
-    name: 'Inner cover',
-    shortName: 'Inner cover',
-    group: 'parts',
-    builtIn: true,
-  },
-  {
-    id: METAL_LID,
-    name: 'Metal lid',
-    shortName: 'Metal lid',
-    group: 'parts',
-    builtIn: true,
-  },
-  {
-    id: WOODEN_LID,
-    name: 'Wooden lid',
-    shortName: 'Wooden lid',
-    group: 'parts',
-    builtIn: true,
-  },
-  {
-    id: ROUND_FEEDER,
-    name: 'Round feeder',
-    shortName: 'Round feeder',
-    group: 'feeding',
-    builtIn: true,
-  },
-  {
-    id: FEEDING_JAR,
-    name: 'Feeding jar',
-    shortName: 'Feeding jar',
-    group: 'feeding',
-    builtIn: true,
-  },
+function starter(
+  id: string,
+  name: string,
+  shortName: string,
+  group: EquipmentGroup,
+  unit: string,
+  frameTotal: FrameTotal = null,
+): EquipmentType {
+  return {
+    id,
+    name,
+    shortName,
+    group,
+    builtIn: false,
+    unit,
+    frameTotal,
+  }
+}
+
+/** Short list Keith can delete. Frame lots keep his existing counts. No feeders. */
+export const STARTER_TYPES: EquipmentType[] = [
+  starter(DEEP_BOX, 'Deep box (10-frame)', 'Deep box', 'boxes', 'boxes'),
+  starter(SHALLOW_BOX, 'Shallow box (10-frame)', 'Shallow box', 'boxes', 'boxes'),
+  starter(NUC_BOX_4, '4-frame nuc box', '4-frame nuc', 'boxes', 'boxes'),
+  starter(NUC_BOX_5, '5-frame nuc box', '5-frame nuc', 'boxes', 'boxes'),
+  starter(
+    DEEP_USED_FRAME,
+    'Deep used frames',
+    'Deep used',
+    'frames',
+    'frames',
+    'deep',
+  ),
+  starter(
+    WAXED_SPRING_FRAME,
+    'Waxed, ready for spring',
+    'Waxed (spring)',
+    'frames',
+    'frames',
+  ),
+  starter(
+    UNBUILT_SPRING_FRAME,
+    'Unbuilt, ready for spring',
+    'Unbuilt (spring)',
+    'frames',
+    'frames',
+  ),
+  starter(
+    SHALLOW_FRAME,
+    'Shallow frames',
+    'Shallow frames',
+    'frames',
+    'frames',
+    'shallow',
+  ),
+  starter(BOTTOM_BOARD, 'Bottom board', 'Bottom board', 'other', ''),
+  starter(INNER_COVER, 'Inner cover', 'Inner cover', 'other', ''),
+  starter(METAL_LID, 'Metal lid', 'Metal lid', 'lids', ''),
+  starter(WOODEN_LID, 'Wooden lid', 'Wooden lid', 'lids', ''),
 ]
+
+/** @deprecated Use STARTER_TYPES. Kept so older migrate paths still have a name. */
+export const BUILTIN_TYPES = STARTER_TYPES
 
 export const GROUP_LABELS: Record<EquipmentGroup, string> = {
   boxes: 'Boxes',
   frames: 'Frames',
-  parts: 'Hive parts',
-  feeding: 'Feeding',
-  custom: 'Other types',
+  lids: 'Lids',
+  other: 'Other',
 }
+
+export const GROUP_ORDER: EquipmentGroup[] = [
+  'boxes',
+  'frames',
+  'lids',
+  'other',
+]
 
 export const FRAME_CONDITION_IDS = [
   DEEP_USED_FRAME,
@@ -130,7 +99,6 @@ export const FRAME_CONDITION_IDS = [
   UNBUILT_SPRING_FRAME,
 ] as const
 
-/** Waxed lot is mixed deep/shallow (total 50, no subtype split). Unbuilt is still a mix pending more detail. */
 export const SPRING_FRAME_LOT_IDS = [
   WAXED_SPRING_FRAME,
   UNBUILT_SPRING_FRAME,
@@ -146,14 +114,6 @@ export const YARD_FULL_SIZE_IDS = [
   'hive-yard-7',
 ] as const
 
-export const GROUP_ORDER: EquipmentGroup[] = [
-  'boxes',
-  'frames',
-  'parts',
-  'feeding',
-  'custom',
-]
-
 export function boxDepth(
   typeId: string,
 ): 'deep' | 'shallow' | 'nuc' | 'other' {
@@ -165,4 +125,65 @@ export function boxDepth(
 
 export function nucBoxType(kind: 'nuc-4' | 'nuc-5'): string {
   return kind === 'nuc-4' ? NUC_BOX_4 : NUC_BOX_5
+}
+
+export const STARTER_IDS = new Set(STARTER_TYPES.map((type) => type.id))
+
+export function defaultUnitForGroup(group: EquipmentGroup): string {
+  if (group === 'boxes') return 'boxes'
+  if (group === 'frames') return 'frames'
+  return ''
+}
+
+export function defaultFrameTotal(typeId: string): FrameTotal {
+  if (typeId === DEEP_USED_FRAME) return 'deep'
+  if (typeId === SHALLOW_FRAME) return 'shallow'
+  return null
+}
+
+export function migrateEquipmentGroup(
+  group: string,
+  typeId: string,
+): EquipmentGroup {
+  if (
+    group === 'boxes' ||
+    group === 'frames' ||
+    group === 'lids' ||
+    group === 'other'
+  ) {
+    return group
+  }
+  if (typeId === METAL_LID || typeId === WOODEN_LID) return 'lids'
+  return 'other'
+}
+
+export type LooseEquipmentType = {
+  id: string
+  name?: string
+  shortName?: string
+  group?: string
+  builtIn?: boolean
+  unit?: string
+  frameTotal?: FrameTotal | null
+}
+
+export function normalizeEquipmentType(raw: LooseEquipmentType): EquipmentType {
+  const group = migrateEquipmentGroup(raw.group ?? 'other', raw.id)
+  const name = (raw.name ?? raw.shortName ?? 'Untitled').trim() || 'Untitled'
+  const shortName = (raw.shortName ?? name).trim() || name
+  const hasFrameTotal = Object.prototype.hasOwnProperty.call(raw, 'frameTotal')
+  return {
+    id: raw.id,
+    name,
+    shortName,
+    group,
+    builtIn: false,
+    unit: raw.unit !== undefined ? raw.unit : defaultUnitForGroup(group),
+    frameTotal:
+      raw.frameTotal === 'deep' || raw.frameTotal === 'shallow'
+        ? raw.frameTotal
+        : hasFrameTotal
+          ? null
+          : defaultFrameTotal(raw.id),
+  }
 }

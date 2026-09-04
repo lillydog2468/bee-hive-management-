@@ -1,4 +1,4 @@
-import type { AppState, Hive } from './types.ts'
+import type { AppState, FrameTotal, Hive } from './types.ts'
 
 export function tallyInUse(hives: Hive[]): Record<string, number> {
   const tally: Record<string, number> = {}
@@ -42,4 +42,37 @@ export function isUncountedOnHives(owned: number, inUse: number): boolean {
 export function unusedForType(state: AppState, typeId: string): number {
   const inUse = tallyInUse(state.hives)
   return unusedCount(ownedCount(state, typeId), inUseCount(inUse, typeId))
+}
+
+/** Pieces of this type sitting on hive stacks (not garage pad display kit). */
+export function typeOnStacksCount(hives: Hive[], typeId: string): number {
+  let count = 0
+  for (const hive of hives) {
+    for (const layer of hive.stack) {
+      if (layer.typeId === typeId) count += 1
+    }
+  }
+  return count
+}
+
+export function stripTypeFromStacks(hives: Hive[], typeId: string): Hive[] {
+  return hives.map((hive) => ({
+    ...hive,
+    stack: hive.stack.filter((layer) => layer.typeId !== typeId),
+  }))
+}
+
+export function framesTotalForTag(
+  state: AppState,
+  tag: Exclude<FrameTotal, null>,
+): { owned: number; inUse: number; unused: number } {
+  const inUse = tallyInUse(state.hives)
+  let owned = 0
+  let used = 0
+  for (const type of state.equipmentTypes) {
+    if (type.frameTotal !== tag) continue
+    owned += ownedCount(state, type.id)
+    used += inUseCount(inUse, type.id)
+  }
+  return { owned, inUse: used, unused: unusedCount(owned, used) }
 }

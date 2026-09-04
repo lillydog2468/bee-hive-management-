@@ -1,5 +1,10 @@
+import {
+  defaultUnitForGroup,
+  METAL_LID,
+  nucBoxType,
+} from './equipment.ts'
 import { isAllowedInspectionBox } from './inspection.ts'
-import { METAL_LID, nucBoxType } from './equipment.ts'
+import { stripTypeFromStacks, typeOnStacksCount } from './inventory.ts'
 import { defaultHiveName, defaultPadName } from './names.ts'
 import {
   canRemoveLayer,
@@ -20,7 +25,9 @@ import {
 } from './stack.ts'
 import type {
   AppState,
+  EquipmentGroup,
   FeedingConfig,
+  FrameTotal,
   HiveKind,
   Inspection,
   PadSize,
@@ -32,8 +39,27 @@ import type {
 export type Action =
   | { type: 'rename-app'; name: string }
   | { type: 'set-owned'; typeId: string; owned: number }
-  | { type: 'add-equipment-type'; id: string; name: string }
-  | { type: 'remove-equipment-type'; typeId: string }
+  | {
+      type: 'add-equipment-type'
+      id: string
+      name: string
+      group?: EquipmentGroup
+      unit?: string
+      frameTotal?: FrameTotal
+    }
+  | {
+      type: 'update-equipment-type'
+      typeId: string
+      name?: string
+      group?: EquipmentGroup
+      unit?: string
+      frameTotal?: FrameTotal
+    }
+  | {
+      type: 'remove-equipment-type'
+      typeId: string
+      stripFromStacks?: boolean
+    }
   | { type: 'rename-hive'; hiveId: string; name: string }
   | { type: 'rename-site'; siteId: string; name: string }
   | { type: 'move-hive'; hiveId: string; siteId: string; padId?: string }
@@ -191,6 +217,13 @@ function reduce(state: AppState, action: Action): AppState {
       if (state.equipmentTypes.some((type) => type.id === action.id)) {
         return state
       }
+      const group = action.group ?? 'other'
+      const unit =
+        action.unit !== undefined ? action.unit.trim() : defaultUnitForGroup(group)
+      const frameTotal =
+        action.frameTotal === 'deep' || action.frameTotal === 'shallow'
+          ? action.frameTotal
+          : null
       return {
         ...state,
         equipmentTypes: [
@@ -199,24 +232,59 @@ function reduce(state: AppState, action: Action): AppState {
             id: action.id,
             name,
             shortName: name,
-            group: 'custom',
+            group,
             builtIn: false,
+            unit,
+            frameTotal,
           },
         ],
         owned: { ...state.owned, [action.id]: 0 },
       }
     }
+    case 'update-equipment-type': {
+      const current = state.equipmentTypes.find(
+        (item) => item.id === action.typeId,
+      )
+      if (!current) return state
+      const name = action.name !== undefined ? action.name.trim() : current.name
+      if (!name) return state
+      const group = action.group ?? current.group
+      const unit =
+        action.unit !== undefined ? action.unit.trim() : current.unit
+      const frameTotal =
+        action.frameTotal === undefined
+          ? current.frameTotal
+          : action.frameTotal === 'deep' || action.frameTotal === 'shallow'
+            ? action.frameTotal
+            : null
+      return {
+        ...state,
+        equipmentTypes: state.equipmentTypes.map((item) =>
+          item.id === action.typeId
+            ? {
+                ...item,
+                name,
+                shortName: name,
+                group,
+                unit,
+                frameTotal,
+              }
+            : item,
+        ),
+      }
+    }
     case 'remove-equipment-type': {
       const type = state.equipmentTypes.find((item) => item.id === action.typeId)
-      if (!type || type.builtIn) return state
-      const used = state.hives.some((hive) =>
-        hive.stack.some((layer) => layer.typeId === action.typeId),
-      )
-      if (used) return state
+      if (!type) return state
+      const used = typeOnStacksCount(state.hives, action.typeId)
+      if (used > 0 && !action.stripFromStacks) return state
+      const hives =
+        used > 0 ? stripTypeFromStacks(state.hives, action.typeId) : state.hives
       const owned = { ...state.owned }
       delete owned[action.typeId]
       return {
         ...state,
+        hives,
         equipmentTypes: state.equipmentTypes.filter(
           (item) => item.id !== action.typeId,
         ),
@@ -362,6 +430,9 @@ function reduce(state: AppState, action: Action): AppState {
           : (action.lidTypeId ??
             state.sites.find((item) => item.id === hive.siteId)?.lidTypeId)
         if (!lidTypeId) return hive
+        if (!state.equipmentTypes.some((item) => item.id === lidTypeId)) {
+          return hive
+        }
         return {
           ...hive,
           stack: toggleRole(hive.stack, 'lid', lidTypeId, true, ids.layer),
@@ -556,7 +627,11 @@ function addInspection(state: AppState, action: AddInspectionAction): AppState {
   let next = state
   if (
     action.addedBoxTypeId &&
-    isAllowedInspectionBox(hive.kind, action.addedBoxTypeId)
+    isAllowedInspectionBox(
+      hive.kind,
+      action.addedBoxTypeId,
+      state.equipmentTypes,
+    )
   ) {
     next = applyInspectionBox(next, hive.id, action.addedBoxTypeId)
   }

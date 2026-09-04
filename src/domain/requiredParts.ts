@@ -59,12 +59,13 @@ export function stackAfterClear(hive: Hive, pad: Pad | undefined): StackLayer[] 
     if (!locked && (layer.role === 'bottom' || layer.role === 'lid')) return true
     return false
   })
-  return ensureHiveRequiredParts({ ...hive, stack: kept }, pad).stack
+  return sortStack(kept)
 }
 
 export function ensureHiveRequiredParts(
   hive: Hive,
   pad: Pad | undefined,
+  metalLidAvailable = true,
 ): Hive {
   const locked = hasLockedBottomAndLid(pad)
   let stack = hive.stack
@@ -74,7 +75,12 @@ export function ensureHiveRequiredParts(
   }
 
   const add: StackLayer[] = []
-  if (!locked && hiveShouldHaveMetalLid(hive, pad) && !hasRole(stack, 'lid')) {
+  if (
+    metalLidAvailable &&
+    !locked &&
+    hiveShouldHaveMetalLid(hive, pad) &&
+    !hasRole(stack, 'lid')
+  ) {
     add.push({
       id: `${hive.id}:lid`,
       typeId: METAL_LID,
@@ -87,12 +93,15 @@ export function ensureHiveRequiredParts(
 }
 
 export function ensureRequiredParts(state: AppState): AppState {
+  const metalLidAvailable = state.equipmentTypes.some(
+    (type) => type.id === METAL_LID,
+  )
   let changed = false
   const hives = state.hives.map((hive) => {
     const pad = hive.padId
       ? state.pads.find((item) => item.id === hive.padId)
       : undefined
-    const next = ensureHiveRequiredParts(hive, pad)
+    const next = ensureHiveRequiredParts(hive, pad, metalLidAvailable)
     if (next !== hive) changed = true
     return next
   })

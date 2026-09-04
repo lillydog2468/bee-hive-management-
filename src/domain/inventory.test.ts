@@ -14,7 +14,7 @@ import {
   WOODEN_LID,
   YARD_FULL_SIZE_IDS,
 } from './equipment.ts'
-import { inUseCount, isUncountedOnHives, tallyInUse, unusedCount, unusedForType } from './inventory.ts'
+import { inUseCount, isUncountedOnHives, tallyInUse, unusedCount, unusedForType, framesTotalForTag } from './inventory.ts'
 import { reducer } from './reducer.ts'
 import { hiveNeedsLidChoice } from './requiredParts.ts'
 import { createSeedState, FAR_SIDE, GARAGE, HOME_YARD, L_YARD_PLACES } from './seed.ts'
@@ -180,6 +180,10 @@ describe('seed', () => {
 
   it('does not invent extra equipment types', () => {
     const state = createSeedState()
+    expect(state.version).toBe(8)
+    expect(state.equipmentTypes.every((type) => type.builtIn === false)).toBe(
+      true,
+    )
     expect(state.equipmentTypes.map((type) => type.id)).toEqual([
       'deep-box',
       'shallow-box',
@@ -193,8 +197,6 @@ describe('seed', () => {
       'inner-cover',
       'metal-lid',
       'wooden-lid',
-      'round-feeder',
-      'feeding-jar',
     ])
   })
 })
@@ -271,9 +273,13 @@ describe('reducer', () => {
       type: 'add-equipment-type',
       id: 'custom-1',
       name: 'Queen excluder',
+      group: 'other',
     })
     expect(state.owned['custom-1']).toBe(0)
     expect(unusedForType(state, 'custom-1')).toBe(0)
+    expect(state.equipmentTypes.find((type) => type.id === 'custom-1')?.group).toBe(
+      'other',
+    )
   })
 
   it('moves a hive onto a garage pad without taking pad kit from unused', () => {
@@ -725,5 +731,107 @@ describe('reducer', () => {
     expect(state.pads.some((pad) => pad.id === 'pad-garage-1')).toBe(false)
     expect(unusedForType(state, WOODEN_LID)).toBe(0)
     expect(state.pads.filter((pad) => pad.lockedBottomAndLid)).toHaveLength(9)
+  })
+})
+
+describe('user-managed equipment types', () => {
+  it('lets every starter type be deleted when it is not on a hive stack', () => {
+    let state = createSeedState()
+    state = reducer(state, {
+      type: 'remove-equipment-type',
+      typeId: SHALLOW_FRAME,
+    })
+    expect(state.equipmentTypes.some((type) => type.id === SHALLOW_FRAME)).toBe(
+      false,
+    )
+    expect(state.owned[SHALLOW_FRAME]).toBeUndefined()
+    expect(state.owned[DEEP_BOX]).toBe(20)
+  })
+
+  it('does not delete a type that is on stacks unless asked to strip first', () => {
+    const seed = createSeedState()
+    const blocked = reducer(seed, {
+      type: 'remove-equipment-type',
+      typeId: DEEP_BOX,
+    })
+    expect(blocked.equipmentTypes.some((type) => type.id === DEEP_BOX)).toBe(
+      true,
+    )
+    expect(blocked.owned[DEEP_BOX]).toBe(20)
+    expect(unusedForType(blocked, DEEP_BOX)).toBe(8)
+  })
+
+  it('strips a type from stacks then deletes it without inventing stock', () => {
+    let state = createSeedState()
+    const unusedShallow = unusedForType(state, SHALLOW_BOX)
+    state = reducer(state, {
+      type: 'remove-equipment-type',
+      typeId: DEEP_BOX,
+      stripFromStacks: true,
+    })
+    expect(state.equipmentTypes.some((type) => type.id === DEEP_BOX)).toBe(false)
+    expect(state.owned[DEEP_BOX]).toBeUndefined()
+    expect(
+      state.hives.some((hive) =>
+        hive.stack.some((layer) => layer.typeId === DEEP_BOX),
+      ),
+    ).toBe(false)
+    expect(unusedForType(state, SHALLOW_BOX)).toBe(unusedShallow)
+  })
+
+  it('does not re-add metal lids after that type is stripped and deleted', () => {
+    let state = createSeedState()
+    state = reducer(state, {
+      type: 'remove-equipment-type',
+      typeId: METAL_LID,
+      stripFromStacks: true,
+    })
+    expect(state.equipmentTypes.some((type) => type.id === METAL_LID)).toBe(
+      false,
+    )
+    expect(
+      state.hives.some((hive) =>
+        hive.stack.some((layer) => layer.typeId === METAL_LID),
+      ),
+    ).toBe(false)
+    expect(state.owned[DEEP_BOX]).toBe(20)
+  })
+
+  it('adds a tagged frame type and sums it into the deep frames total', () => {
+    let state = createSeedState()
+    const deepBefore = framesTotalForTag(state, 'deep')
+    expect(deepBefore.owned).toBe(50)
+    state = reducer(state, {
+      type: 'add-equipment-type',
+      id: 'custom-deep-waxed',
+      name: 'Deep frames, new waxed',
+      group: 'frames',
+      unit: 'frames',
+      frameTotal: 'deep',
+    })
+    state = reducer(state, {
+      type: 'set-owned',
+      typeId: 'custom-deep-waxed',
+      owned: 10,
+    })
+    expect(framesTotalForTag(state, 'deep').owned).toBe(60)
+    expect(framesTotalForTag(state, 'shallow').owned).toBe(0)
+    const waxed = state.equipmentTypes.find(
+      (type) => type.id === WAXED_SPRING_FRAME,
+    )
+    expect(waxed?.frameTotal).toBeNull()
+  })
+
+  it('renames a type without changing owned counts', () => {
+    let state = createSeedState()
+    state = reducer(state, {
+      type: 'update-equipment-type',
+      typeId: DEEP_BOX,
+      name: 'Deep brood box',
+    })
+    expect(state.equipmentTypes.find((type) => type.id === DEEP_BOX)?.name).toBe(
+      'Deep brood box',
+    )
+    expect(state.owned[DEEP_BOX]).toBe(20)
   })
 })

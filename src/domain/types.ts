@@ -16,12 +16,9 @@ export type HiveKind = 'full-size' | 'nuc-4' | 'nuc-5'
 
 export type PadSize = 'full-size' | 'nuc'
 
-export type EquipmentGroup =
-  | 'boxes'
-  | 'frames'
-  | 'parts'
-  | 'feeding'
-  | 'custom'
+export type EquipmentGroup = 'boxes' | 'frames' | 'lids' | 'other'
+
+export type FrameTotal = 'deep' | 'shallow' | null
 
 export type EquipmentType = {
   id: string
@@ -29,6 +26,8 @@ export type EquipmentType = {
   shortName: string
   group: EquipmentGroup
   builtIn: boolean
+  unit: string
+  frameTotal: FrameTotal
 }
 
 export type StackLayer = {
@@ -114,7 +113,7 @@ export type Pad = {
 }
 
 export type AppState = {
-  version: 7
+  version: 8
   appName: string
   equipmentTypes: EquipmentType[]
   owned: Record<string, number>

@@ -54,6 +54,7 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
   const needsLid = hiveNeedsLidChoice(hive, pad)
   const needsBottom = hiveNeedsBottom(hive, pad)
   const needsInner = hiveNeedsInnerCover(hive)
+  const lidTypes = state.equipmentTypes.filter((item) => item.group === 'lids')
   const metalLidLocked = hiveShouldHaveMetalLid(hive, pad)
   const hasReturnableKit = hive.stack.some(
     (layer) =>
@@ -246,39 +247,35 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         {needsLid ? (
           <div className="lid-needed">
             <p>
-              <strong>Lid</strong> — required. Choose metal or wooden. Garage
-              wooden lids stay on those pads and cannot be used here.
+              <strong>Lid</strong> — required. Choose from your lid types.
+              Garage wooden lids stay on those pads and cannot be used here.
             </p>
-            <div className="segment">
-              <button
-                type="button"
-                onClick={() =>
-                  dispatch({
-                    type: 'toggle-part',
-                    hiveId: hive.id,
-                    part: 'lid',
-                    on: true,
-                    lidTypeId: METAL_LID,
-                  })
-                }
-              >
-                Metal lid
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  dispatch({
-                    type: 'toggle-part',
-                    hiveId: hive.id,
-                    part: 'lid',
-                    on: true,
-                    lidTypeId: WOODEN_LID,
-                  })
-                }
-              >
-                Wooden lid
-              </button>
-            </div>
+            {lidTypes.length === 0 ? (
+              <p className="card-copy">
+                No lid types in your list. Add one on Unused if you need to put
+                a lid on.
+              </p>
+            ) : (
+              <div className="segment wrap-segment">
+                {lidTypes.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() =>
+                      dispatch({
+                        type: 'toggle-part',
+                        hiveId: hive.id,
+                        part: 'lid',
+                        on: true,
+                        lidTypeId: item.id,
+                      })
+                    }
+                  >
+                    {item.shortName || item.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <ToggleRow
@@ -622,11 +619,10 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
           <div className="choice-list">
             {state.equipmentTypes
               .filter(
-                (type) =>
-                  type.id !== 'bottom-board' &&
-                  type.id !== 'inner-cover' &&
-                  type.id !== 'metal-lid' &&
-                  type.id !== 'wooden-lid',
+                (item) =>
+                  item.id !== 'bottom-board' &&
+                  item.id !== 'inner-cover' &&
+                  item.group !== 'lids',
               )
               .map((type) => (
               <button

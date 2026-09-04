@@ -1,12 +1,15 @@
 import {
   BOTTOM_BOARD,
-  BUILTIN_TYPES,
   DEEP_USED_FRAME,
   INNER_COVER,
   METAL_LID,
+  normalizeEquipmentType,
+  STARTER_IDS,
+  STARTER_TYPES,
   UNBUILT_SPRING_FRAME,
   WAXED_SPRING_FRAME,
   YARD_FULL_SIZE_IDS,
+  type LooseEquipmentType,
 } from './equipment.ts'
 import { ensureRequiredParts } from './requiredParts.ts'
 import {
@@ -56,12 +59,13 @@ type LooseHive = Omit<Hive, 'feedings' | 'inspections'> & {
 
 export type LooseState = Omit<
   AppState,
-  'version' | 'pads' | 'hives' | 'splits'
+  'version' | 'pads' | 'hives' | 'splits' | 'equipmentTypes'
 > & {
   version: number
   pads: LoosePad[]
   hives: LooseHive[]
   splits?: SplitRecord[]
+  equipmentTypes?: LooseEquipmentType[]
 }
 
 function migratePad(pad: LoosePad): Pad {
@@ -86,11 +90,41 @@ function remapFrameLayer(layer: StackLayer): StackLayer {
   return { ...layer, typeId: DEEP_USED_FRAME }
 }
 
-function mergeTypes(existing: EquipmentType[]): EquipmentType[] {
-  const custom = existing.filter(
-    (type) => !type.builtIn && type.id !== 'deep-frame',
-  )
-  return [...BUILTIN_TYPES.map((type) => ({ ...type })), ...custom]
+function mergeTypes(existing: LooseEquipmentType[]): EquipmentType[] {
+  const seen = new Set<string>()
+  const custom: EquipmentType[] = []
+  for (const type of existing) {
+    if (!type.id || type.id === 'deep-frame') continue
+    if (STARTER_IDS.has(type.id) || type.builtIn) continue
+    if (seen.has(type.id)) continue
+    seen.add(type.id)
+    custom.push(normalizeEquipmentType(type))
+  }
+  return [...STARTER_TYPES.map((type) => ({ ...type })), ...custom]
+}
+
+function keepExistingTypes(existing: LooseEquipmentType[]): EquipmentType[] {
+  const seen = new Set<string>()
+  const next: EquipmentType[] = []
+  for (const type of existing) {
+    if (!type.id || type.id === 'deep-frame') continue
+    if (seen.has(type.id)) continue
+    seen.add(type.id)
+    next.push(normalizeEquipmentType(type))
+  }
+  return next
+}
+
+function withOwnedDefaults(
+  types: EquipmentType[],
+  ownedIn: Record<string, number>,
+): Record<string, number> {
+  const owned: Record<string, number> = { ...ownedIn }
+  delete owned['deep-frame']
+  for (const type of types) {
+    if (owned[type.id] === undefined) owned[type.id] = 0
+  }
+  return owned
 }
 
 function withYardMetalLids(hives: LooseHive[]): LooseHive[] {
@@ -140,18 +174,25 @@ function withHomeYardGapPad(pads: Pad[]): Pad[] {
   ]
 }
 
-function toV6(
-  state: Omit<AppState, 'version' | 'hives' | 'pads' | 'splits'> & {
+function toLatest(
+  state: Omit<AppState, 'version' | 'hives' | 'pads' | 'splits' | 'equipmentTypes'> & {
     version: number
     hives: LooseHive[]
     pads: Pad[]
     splits?: SplitRecord[]
+    equipmentTypes: LooseEquipmentType[]
   },
   addGapPad: boolean,
+  remeshStarters: boolean,
 ): AppState {
+  const equipmentTypes = remeshStarters
+    ? mergeTypes(state.equipmentTypes)
+    : keepExistingTypes(state.equipmentTypes)
   const next: AppState = {
     ...state,
-    version: 7,
+    version: 8,
+    equipmentTypes,
+    owned: withOwnedDefaults(equipmentTypes, state.owned),
     hives: state.hives.map(migrateHive),
     pads: addGapPad ? withHomeYardGapPad(state.pads) : state.pads,
     splits: state.splits ?? [],
@@ -185,18 +226,19 @@ function applyV3(parsed: LooseState): AppState {
 }
 
 function toV5(
-  state: Omit<AppState, 'version' | 'hives' | 'pads' | 'splits'> & {
+  state: Omit<AppState, 'version' | 'hives' | 'pads' | 'splits' | 'equipmentTypes'> & {
     version: number
     hives: LooseHive[]
     pads: Pad[]
     splits?: SplitRecord[]
+    equipmentTypes: LooseEquipmentType[]
   },
   addGapPad: boolean,
 ): AppState {
   const owned = { ...state.owned }
   owned[BOTTOM_BOARD] = 2
   owned[INNER_COVER] = 2
-  return toV6(
+  return toLatest(
     {
       ...state,
       owned,
@@ -206,27 +248,32 @@ function toV5(
       splits: state.splits,
     },
     addGapPad,
+    false,
   )
 }
 
 export function migrateState(parsed: LooseState): AppState | null {
   if (!Array.isArray(parsed.hives) || !Array.isArray(parsed.pads)) return null
-  if (parsed.version === 7 || parsed.version === 6) {
-    return toV6(
+  if (parsed.version === 8 || parsed.version === 7 || parsed.version === 6) {
+    return toLatest(
       {
         ...parsed,
         pads: parsed.pads.map(migratePad),
+        equipmentTypes: parsed.equipmentTypes ?? [],
       },
+      false,
       false,
     )
   }
   if (parsed.version === 5) {
-    return toV6(
+    return toLatest(
       {
         ...parsed,
         pads: parsed.pads.map(migratePad),
+        equipmentTypes: parsed.equipmentTypes ?? [],
       },
       true,
+      false,
     )
   }
   if (parsed.version === 3 || parsed.version === 4) {
@@ -234,6 +281,7 @@ export function migrateState(parsed: LooseState): AppState | null {
       {
         ...parsed,
         pads: parsed.pads.map(migratePad),
+        equipmentTypes: parsed.equipmentTypes ?? [],
       },
       true,
     )

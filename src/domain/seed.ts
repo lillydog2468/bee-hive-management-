@@ -1,6 +1,5 @@
 import {
   BOTTOM_BOARD,
-  BUILTIN_TYPES,
   DEEP_BOX,
   DEEP_USED_FRAME,
   INNER_COVER,
@@ -8,6 +7,7 @@ import {
   NUC_BOX_4,
   NUC_BOX_5,
   SHALLOW_BOX,
+  STARTER_TYPES,
   UNBUILT_SPRING_FRAME,
   WAXED_SPRING_FRAME,
 } from './equipment.ts'
@@ -219,7 +219,7 @@ export function createSeedState(): AppState {
   ]
 
   const owned: Record<string, number> = {}
-  for (const type of BUILTIN_TYPES) {
+  for (const type of STARTER_TYPES) {
     owned[type.id] = 0
   }
   owned[DEEP_BOX] = 20
@@ -232,9 +232,9 @@ export function createSeedState(): AppState {
   owned[UNBUILT_SPRING_FRAME] = 50
 
   return {
-    version: 7,
+    version: 8,
     appName: 'Hives',
-    equipmentTypes: BUILTIN_TYPES.map((type) => ({ ...type })),
+    equipmentTypes: STARTER_TYPES.map((type) => ({ ...type })),
     owned,
     sites,
     hives,

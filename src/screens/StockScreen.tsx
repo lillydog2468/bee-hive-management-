@@ -1,30 +1,53 @@
 import { useState } from 'react'
-import { BOTTOM_BOARD, DEEP_USED_FRAME, INNER_COVER, METAL_LID, SHALLOW_FRAME, UNBUILT_SPRING_FRAME, WAXED_SPRING_FRAME, WOODEN_LID } from '../domain/equipment.ts'
+import {
+  BOTTOM_BOARD,
+  DEEP_USED_FRAME,
+  GROUP_LABELS,
+  GROUP_ORDER,
+  INNER_COVER,
+  METAL_LID,
+  SHALLOW_FRAME,
+  UNBUILT_SPRING_FRAME,
+  WAXED_SPRING_FRAME,
+  WOODEN_LID,
+} from '../domain/equipment.ts'
 import { KitThumb } from '../components/KitIllustration.tsx'
 import { Layout } from '../components/Layout.tsx'
 import { PhotoField } from '../components/PhotoField.tsx'
+import { Sheet } from '../components/Sheet.tsx'
 import { Stepper } from '../components/Stepper.tsx'
-import { inUseCount, isUncountedOnHives, unusedCount } from '../domain/inventory.ts'
+import {
+  inUseCount,
+  isUncountedOnHives,
+  typeOnStacksCount,
+  unusedCount,
+} from '../domain/inventory.ts'
+import type { EquipmentGroup, FrameTotal } from '../domain/types.ts'
 import { useStore } from '../state/context.ts'
 
 export function StockScreen({ typeId }: { typeId: string }) {
   const { state, dispatch, inUse, go, photos, setTypePhoto } = useStore()
   const type = state.equipmentTypes.find((item) => item.id === typeId)
   const [newName, setNewName] = useState('')
+  const [newGroup, setNewGroup] = useState<EquipmentGroup>('other')
+  const [newUnit, setNewUnit] = useState('')
+  const [newFrameTotal, setNewFrameTotal] = useState<FrameTotal>(null)
   const [editingOwned, setEditingOwned] = useState(false)
   const [ownedDraft, setOwnedDraft] = useState('')
   const [draftTypeId, setDraftTypeId] = useState(typeId)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   if (draftTypeId !== typeId) {
     setDraftTypeId(typeId)
     setEditingOwned(false)
     setOwnedDraft('')
+    setConfirmDelete(false)
   }
 
   if (typeId === 'new') {
     return (
       <Layout
         title="Add a type"
-        subtitle="Add a type when you want to count it. 0 is fine until you have a number."
+        subtitle="Add only what you own or want to count. 0 is fine until you have a number."
         back={{ label: 'Unused kit', href: '#/unused' }}
       >
         <label className="field">
@@ -32,17 +55,74 @@ export function StockScreen({ typeId }: { typeId: string }) {
           <input
             value={newName}
             onChange={(event) => setNewName(event.target.value)}
-            placeholder="e.g. Queen excluder"
+            placeholder="e.g. Deep frames, new waxed"
             autoComplete="off"
           />
         </label>
+        <label className="field">
+          <span>Group</span>
+          <select
+            value={newGroup}
+            onChange={(event) =>
+              setNewGroup(event.target.value as EquipmentGroup)
+            }
+          >
+            {GROUP_ORDER.map((group) => (
+              <option key={group} value={group}>
+                {GROUP_LABELS[group]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span>Unit (optional)</span>
+          <input
+            value={newUnit}
+            onChange={(event) => setNewUnit(event.target.value)}
+            placeholder="e.g. boxes, frames, each"
+            autoComplete="off"
+          />
+        </label>
+        <fieldset className="field">
+          <legend>Counts towards frame totals (optional)</legend>
+          <div className="segment wrap-segment">
+            <button
+              type="button"
+              className={newFrameTotal === null ? 'is-on' : ''}
+              onClick={() => setNewFrameTotal(null)}
+            >
+              Neither
+            </button>
+            <button
+              type="button"
+              className={newFrameTotal === 'deep' ? 'is-on' : ''}
+              onClick={() => setNewFrameTotal('deep')}
+            >
+              Deep frames total
+            </button>
+            <button
+              type="button"
+              className={newFrameTotal === 'shallow' ? 'is-on' : ''}
+              onClick={() => setNewFrameTotal('shallow')}
+            >
+              Shallow frames total
+            </button>
+          </div>
+        </fieldset>
         <button
           className="primary"
           type="button"
           disabled={!newName.trim()}
           onClick={() => {
             const id = `custom-${crypto.randomUUID()}`
-            dispatch({ type: 'add-equipment-type', id, name: newName.trim() })
+            dispatch({
+              type: 'add-equipment-type',
+              id,
+              name: newName.trim(),
+              group: newGroup,
+              unit: newUnit.trim(),
+              frameTotal: newFrameTotal,
+            })
             go({ page: 'stock', typeId: id })
           }}
         >
@@ -64,11 +144,12 @@ export function StockScreen({ typeId }: { typeId: string }) {
   const used = inUseCount(inUse, type.id)
   const unused = unusedCount(owned, used)
   const free = Math.max(0, unused)
+  const onStacks = typeOnStacksCount(state.hives, type.id)
 
   return (
     <Layout
       title={type.name}
-      subtitle="Type how many you own when you have counted. Unused is owned minus what is on hive stacks. 0 means not counted yet."
+      subtitle="Edit this type, type how many you own, or delete it. Unused is owned minus what is on hive stacks. 0 means not counted yet."
       back={{ label: 'Unused kit', href: '#/unused' }}
     >
       <div className="stat-card">
@@ -76,9 +157,12 @@ export function StockScreen({ typeId }: { typeId: string }) {
           <KitThumb typeId={type.id} photo={photos.types[type.id]} />
           <div>
             <p className="stat-label">Unused</p>
-            <p className={owned > 0 && unused < 0 ? 'stat-num is-short' : 'stat-num'}>{free}</p>
+            <p className={owned > 0 && unused < 0 ? 'stat-num is-short' : 'stat-num'}>
+              {free}
+            </p>
             <p className="stat-sub">
               {owned} owned · {used} on hives
+              {type.unit ? ` · ${type.unit}` : ''}
             </p>
           </div>
         </div>
@@ -90,15 +174,111 @@ export function StockScreen({ typeId }: { typeId: string }) {
         />
       </div>
 
+      <div className="card">
+        <p className="card-kicker">This type</p>
+        <label className="field">
+          <span>Name</span>
+          <input
+            value={type.name}
+            onChange={(event) =>
+              dispatch({
+                type: 'update-equipment-type',
+                typeId: type.id,
+                name: event.target.value,
+              })
+            }
+            autoComplete="off"
+          />
+        </label>
+        <label className="field">
+          <span>Group</span>
+          <select
+            value={type.group}
+            onChange={(event) =>
+              dispatch({
+                type: 'update-equipment-type',
+                typeId: type.id,
+                group: event.target.value as EquipmentGroup,
+              })
+            }
+          >
+            {GROUP_ORDER.map((group) => (
+              <option key={group} value={group}>
+                {GROUP_LABELS[group]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span>Unit (optional)</span>
+          <input
+            value={type.unit}
+            onChange={(event) =>
+              dispatch({
+                type: 'update-equipment-type',
+                typeId: type.id,
+                unit: event.target.value,
+              })
+            }
+            placeholder="e.g. boxes, frames, each"
+            autoComplete="off"
+          />
+        </label>
+        <fieldset className="field">
+          <legend>Counts towards frame totals</legend>
+          <div className="segment wrap-segment">
+            <button
+              type="button"
+              className={type.frameTotal === null ? 'is-on' : ''}
+              onClick={() =>
+                dispatch({
+                  type: 'update-equipment-type',
+                  typeId: type.id,
+                  frameTotal: null,
+                })
+              }
+            >
+              Neither
+            </button>
+            <button
+              type="button"
+              className={type.frameTotal === 'deep' ? 'is-on' : ''}
+              onClick={() =>
+                dispatch({
+                  type: 'update-equipment-type',
+                  typeId: type.id,
+                  frameTotal: 'deep',
+                })
+              }
+            >
+              Deep frames total
+            </button>
+            <button
+              type="button"
+              className={type.frameTotal === 'shallow' ? 'is-on' : ''}
+              onClick={() =>
+                dispatch({
+                  type: 'update-equipment-type',
+                  typeId: type.id,
+                  frameTotal: 'shallow',
+                })
+              }
+            >
+              Shallow frames total
+            </button>
+          </div>
+        </fieldset>
+      </div>
+
       {type.id === BOTTOM_BOARD || type.id === WOODEN_LID ? (
         <div className="banner">
           <p>
             Bottom boards and wooden lids on the garage pads stay with those pads.
-            They are not this unused stock, and they cannot be moved to the L-yard or
-            the far-side hive. Only add a number here if you own extra pieces besides
-            those pads.
+            They are not this unused stock, and they cannot be moved to the L-yard
+            or the far-side hive. Only add a number here if you own extra pieces
+            besides those pads.
             {type.id === BOTTOM_BOARD
-              ? ' Two spare unused bottom boards. They are not auto-assigned onto the L-yard hives.'
+              ? ' Two spare unused bottom boards at start. They are not auto-assigned onto the L-yard hives.'
               : ''}
           </p>
         </div>
@@ -108,7 +288,7 @@ export function StockScreen({ typeId }: { typeId: string }) {
         <div className="banner">
           <p>
             Every hive needs an inner cover. Two spare unused covers sit in
-            Unused. They are not auto-assigned onto the L-yard hives.
+            Unused at start. They are not auto-assigned onto the L-yard hives.
           </p>
         </div>
       ) : null}
@@ -116,9 +296,9 @@ export function StockScreen({ typeId }: { typeId: string }) {
       {type.id === METAL_LID ? (
         <div className="banner">
           <p>
-            Seven metal lids are on the L-yard full-size hives. Five are spare.
-            The outdoor nucs and the far-side nuc still need a lid chosen — no
-            extra metal lids were assumed for them.
+            Seven metal lids are on the L-yard full-size hives at start. Five are
+            spare. The outdoor nucs and the far-side nuc still need a lid chosen —
+            no extra metal lids were assumed for them.
           </p>
         </div>
       ) : null}
@@ -150,7 +330,7 @@ export function StockScreen({ typeId }: { typeId: string }) {
       {type.id === SHALLOW_FRAME ? (
         <div className="banner">
           <p>
-          Shallows in the waxed lot (and any in the unbuilt lot) have not been
+            Shallows in the waxed lot (and any in the unbuilt lot) have not been
             counted separately. This row stays at 0 until you type a number. It
             is not a split of the spring lots and not a claim that there are no
             shallow frames.
@@ -222,17 +402,46 @@ export function StockScreen({ typeId }: { typeId: string }) {
         </label>
       </div>
 
-      {!type.builtIn && used === 0 ? (
-        <button
-          className="danger-text"
-          type="button"
-          onClick={() => {
-            dispatch({ type: 'remove-equipment-type', typeId: type.id })
-            go({ page: 'unused' })
-          }}
-        >
-          Remove this type
-        </button>
+      <button
+        className="danger-text"
+        type="button"
+        onClick={() => setConfirmDelete(true)}
+      >
+        Delete this type
+      </button>
+
+      {confirmDelete ? (
+        <Sheet title="Delete this type?" onClose={() => setConfirmDelete(false)}>
+          {onStacks > 0 ? (
+            <p className="sheet-lede">
+              {type.name} is on {onStacks} hive stack piece
+              {onStacks === 1 ? '' : 's'}. Take those pieces off the stacks and
+              delete the type? This does not add extra unused stock — the type
+              and its owned number leave the list.
+            </p>
+          ) : (
+            <p className="sheet-lede">
+              Delete {type.name} from your list? Owned count {owned} will be
+              removed with it. This does not invent stock.
+            </p>
+          )}
+          <button
+            className="danger"
+            type="button"
+            onClick={() => {
+              dispatch({
+                type: 'remove-equipment-type',
+                typeId: type.id,
+                stripFromStacks: onStacks > 0,
+              })
+              setTypePhoto(type.id, null)
+              setConfirmDelete(false)
+              go({ page: 'unused' })
+            }}
+          >
+            {onStacks > 0 ? 'Take off hives and delete' : 'Delete type'}
+          </button>
+        </Sheet>
       ) : null}
     </Layout>
   )
