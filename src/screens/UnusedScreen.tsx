@@ -13,19 +13,13 @@ import {
   WAXED_SPRING_FRAME,
   WOODEN_LID,
 } from '../domain/equipment.ts'
-import {
-  framesTotalForTag,
-  inUseCount,
-  isUncountedOnHives,
-  unusedCount,
-} from '../domain/inventory.ts'
-import type { EquipmentType } from '../domain/types.ts'
-import { KitThumb } from '../components/KitIllustration.tsx'
+import { framesTotalForTag } from '../domain/inventory.ts'
 import { Layout } from '../components/Layout.tsx'
+import { SortableKitList } from '../components/SortableKitList.tsx'
 import { useStore } from '../state/context.ts'
 
 export function UnusedScreen() {
-  const { state, inUse, go } = useStore()
+  const { state, go } = useStore()
   const lockedPads = state.pads.filter((pad) => pad.lockedBottomAndLid)
   const lockedFull = lockedPads.filter((pad) => pad.size === 'full-size').length
   const lockedNuc = lockedPads.filter((pad) => pad.size === 'nuc').length
@@ -104,27 +98,22 @@ export function UnusedScreen() {
             {types.length === 0 ? (
               <p className="card-copy">None in this section yet.</p>
             ) : (
-              <ul className="kit-list">
-                {types.map((type) => (
-                  <KitRow
-                    key={type.id}
-                    type={type}
-                    owned={state.owned[type.id] ?? 0}
-                    used={inUseCount(inUse, type.id)}
-                    note={starterNote(type.id)}
-                    onOpen={() => go({ page: 'stock', typeId: type.id })}
-                  />
-                ))}
-              </ul>
+              <SortableKitList
+                group={group}
+                types={types}
+                noteFor={starterNote}
+                onOpen={(typeId) => go({ page: 'stock', typeId })}
+              />
             )}
           </section>
         )
       })}
 
       <p className="footnote">
-        Add to a section with the button on that heading. Tap a type to edit its
-        name, owned count, photo, or delete it. Assigning kit to a hive takes it
-        out of unused; taking it off a hive returns it.
+        Add to a section with the button on that heading. Drag the handle on the
+        left to reorder types within that section. Tap a type to edit its name,
+        owned count, photo, or delete it. Assigning kit to a hive takes it out
+        of unused; taking it off a hive returns it.
       </p>
     </Layout>
   )
@@ -158,57 +147,4 @@ function starterNote(typeId: string): string | undefined {
     return 'garage pad lids stay on those pads; extra unused wooden lids not counted'
   }
   return undefined
-}
-
-function KitRow({
-  type,
-  owned,
-  used,
-  onOpen,
-  note,
-}: {
-  type: EquipmentType
-  owned: number
-  used: number
-  onOpen: () => void
-  note?: string
-}) {
-  const { photos } = useStore()
-  const unused = unusedCount(owned, used)
-  const free = Math.max(0, unused)
-  const uncounted = isUncountedOnHives(owned, used)
-  const short = owned > 0 && used > owned
-  const extras = [
-    uncounted ? 'owned not counted yet' : '',
-    short ? `short by ${used - owned}` : '',
-    note ?? '',
-  ].filter(Boolean)
-  return (
-    <li>
-      <button type="button" className="kit-row" onClick={onOpen}>
-        <KitThumb typeId={type.id} photo={photos.types[type.id]} />
-        <span className="kit-copy">
-          <span className="kit-name">{type.name}</span>
-          <span className="kit-meta">
-            {owned} owned · {used} on hives
-            {type.unit ? ` · ${type.unit}` : ''}
-            {extras.length > 0 ? ` · ${extras.join(' · ')}` : ''}
-          </span>
-        </span>
-        <span
-          className={
-            short
-              ? 'kit-count is-short'
-              : uncounted
-                ? 'kit-count is-uncounted'
-                : free > 0
-                  ? 'kit-count is-free'
-                  : 'kit-count'
-          }
-        >
-          {free}
-        </span>
-      </button>
-    </li>
-  )
 }

@@ -870,4 +870,121 @@ describe('user-managed equipment types', () => {
     expect(byId[METAL_LID]).toBe('tops-and-bottoms')
     expect(byId[WOODEN_LID]).toBe('tops-and-bottoms')
   })
+
+  it('reorders types within a section without changing other sections or owned counts', () => {
+    let state = createSeedState()
+    const ownedBefore = { ...state.owned }
+    const hiveBoxesBefore = state.equipmentTypes
+      .filter((type) => type.group === 'hive-boxes')
+      .map((type) => type.id)
+    const topsBefore = state.equipmentTypes
+      .filter((type) => type.group === 'tops-and-bottoms')
+      .map((type) => type.id)
+    const otherBefore = state.equipmentTypes
+      .filter((type) => type.group === 'other')
+      .map((type) => type.id)
+    state = reducer(state, {
+      type: 'reorder-equipment',
+      group: 'frames',
+      typeId: DEEP_USED_FRAME,
+      toIndex: 3,
+    })
+    expect(
+      state.equipmentTypes
+        .filter((type) => type.group === 'frames')
+        .map((type) => type.id),
+    ).toEqual([
+      WAXED_SPRING_FRAME,
+      UNBUILT_SPRING_FRAME,
+      SHALLOW_FRAME,
+      DEEP_USED_FRAME,
+    ])
+    expect(
+      state.equipmentTypes
+        .filter((type) => type.group === 'hive-boxes')
+        .map((type) => type.id),
+    ).toEqual(hiveBoxesBefore)
+    expect(
+      state.equipmentTypes
+        .filter((type) => type.group === 'tops-and-bottoms')
+        .map((type) => type.id),
+    ).toEqual(topsBefore)
+    expect(
+      state.equipmentTypes
+        .filter((type) => type.group === 'other')
+        .map((type) => type.id),
+    ).toEqual(otherBefore)
+    expect(state.owned).toEqual(ownedBefore)
+    expect(unusedForType(state, DEEP_USED_FRAME)).toBe(50)
+  })
+
+  it('reorders hive boxes within that section only', () => {
+    let state = createSeedState()
+    const framesBefore = state.equipmentTypes
+      .filter((type) => type.group === 'frames')
+      .map((type) => type.id)
+    state = reducer(state, {
+      type: 'reorder-equipment',
+      group: 'hive-boxes',
+      typeId: NUC_BOX_5,
+      toIndex: 0,
+    })
+    expect(
+      state.equipmentTypes
+        .filter((type) => type.group === 'hive-boxes')
+        .map((type) => type.id),
+    ).toEqual([NUC_BOX_5, DEEP_BOX, SHALLOW_BOX, NUC_BOX_4])
+    expect(
+      state.equipmentTypes
+        .filter((type) => type.group === 'frames')
+        .map((type) => type.id),
+    ).toEqual(framesBefore)
+    expect(state.owned[DEEP_BOX]).toBe(20)
+    expect(unusedForType(state, DEEP_BOX)).toBe(8)
+  })
+
+  it('does not reorder when the type is already at that index', () => {
+    const state = createSeedState()
+    const next = reducer(state, {
+      type: 'reorder-equipment',
+      group: 'frames',
+      typeId: DEEP_USED_FRAME,
+      toIndex: 0,
+    })
+    expect(next).toBe(state)
+  })
+
+  it('does not invent a type when reordering an unknown id', () => {
+    const state = createSeedState()
+    const next = reducer(state, {
+      type: 'reorder-equipment',
+      group: 'frames',
+      typeId: 'no-such-type',
+      toIndex: 2,
+    })
+    expect(next).toBe(state)
+    expect(state.equipmentTypes.map((type) => type.id)).toEqual(
+      createSeedState().equipmentTypes.map((type) => type.id),
+    )
+  })
+
+  it('clamps a far index to the end of that section', () => {
+    let state = createSeedState()
+    state = reducer(state, {
+      type: 'reorder-equipment',
+      group: 'frames',
+      typeId: DEEP_USED_FRAME,
+      toIndex: 99,
+    })
+    expect(
+      state.equipmentTypes
+        .filter((type) => type.group === 'frames')
+        .map((type) => type.id),
+    ).toEqual([
+      WAXED_SPRING_FRAME,
+      UNBUILT_SPRING_FRAME,
+      SHALLOW_FRAME,
+      DEEP_USED_FRAME,
+    ])
+  })
 })

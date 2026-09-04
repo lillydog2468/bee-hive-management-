@@ -4,10 +4,12 @@ import {
   DEEP_USED_FRAME,
   METAL_LID,
   SHALLOW_FRAME,
+  UNBUILT_SPRING_FRAME,
   WAXED_SPRING_FRAME,
   WOODEN_LID,
 } from './equipment.ts'
 import { unusedForType } from './inventory.ts'
+import { reducer } from './reducer.ts'
 import { createSeedState, HOME_YARD, L_YARD_GAP_PAD } from './seed.ts'
 import { migrateState } from './storage.ts'
 
@@ -278,5 +280,29 @@ describe('storage migrate', () => {
       next?.equipmentTypes.find((type) => type.id === 'custom-excluder')?.group,
     ).toBe('hive-boxes')
     expect(next?.owned['custom-excluder']).toBe(3)
+  })
+
+  it('keeps a dragged type order when reloading v9 data', () => {
+    const seed = createSeedState()
+    const reordered = reducer(seed, {
+      type: 'reorder-equipment',
+      group: 'frames',
+      typeId: DEEP_USED_FRAME,
+      toIndex: 3,
+    })
+    const next = migrateState(JSON.parse(JSON.stringify(reordered)))
+    expect(
+      next?.equipmentTypes
+        .filter((type) => type.group === 'frames')
+        .map((type) => type.id),
+    ).toEqual([
+      WAXED_SPRING_FRAME,
+      UNBUILT_SPRING_FRAME,
+      SHALLOW_FRAME,
+      DEEP_USED_FRAME,
+    ])
+    expect(next?.owned[DEEP_USED_FRAME]).toBe(50)
+    expect(unusedForType(next!, DEEP_USED_FRAME)).toBe(50)
+    expect(next?.owned[DEEP_BOX]).toBe(20)
   })
 })

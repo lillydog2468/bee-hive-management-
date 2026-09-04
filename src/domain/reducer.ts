@@ -2,6 +2,7 @@ import {
   defaultUnitForGroup,
   METAL_LID,
   nucBoxType,
+  reorderTypesInGroup,
 } from './equipment.ts'
 import { isAllowedInspectionBox } from './inspection.ts'
 import { stripTypeFromStacks, typeOnStacksCount } from './inventory.ts'
@@ -60,6 +61,12 @@ export type Action =
       type: 'remove-equipment-type'
       typeId: string
       stripFromStacks?: boolean
+    }
+  | {
+      type: 'reorder-equipment'
+      group: EquipmentGroup
+      typeId: string
+      toIndex: number
     }
   | { type: 'rename-hive'; hiveId: string; name: string }
   | { type: 'rename-site'; siteId: string; name: string }
@@ -294,6 +301,16 @@ function reduce(state: AppState, action: Action): AppState {
         ),
         owned,
       }
+    }
+    case 'reorder-equipment': {
+      const nextTypes = reorderTypesInGroup(
+        state.equipmentTypes,
+        action.group,
+        action.typeId,
+        action.toIndex,
+      )
+      if (nextTypes === state.equipmentTypes) return state
+      return { ...state, equipmentTypes: nextTypes }
     }
     case 'rename-hive':
       return withHive(state, action.hiveId, (hive) => ({

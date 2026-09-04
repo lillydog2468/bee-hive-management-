@@ -120,6 +120,25 @@ export const GROUP_ORDER: EquipmentGroup[] = [
   'other',
 ]
 
+/** Move a type within its section. Other sections stay put. Owned counts are untouched. */
+export function reorderTypesInGroup(
+  types: EquipmentType[],
+  group: EquipmentGroup,
+  typeId: string,
+  toIndex: number,
+): EquipmentType[] {
+  const groupItems = types.filter((type) => type.group === group)
+  const fromIndex = groupItems.findIndex((type) => type.id === typeId)
+  if (fromIndex < 0 || groupItems.length < 2) return types
+  const clamped = Math.max(0, Math.min(groupItems.length - 1, Math.round(toIndex)))
+  if (fromIndex === clamped) return types
+  const nextGroup = [...groupItems]
+  const [moved] = nextGroup.splice(fromIndex, 1)
+  nextGroup.splice(clamped, 0, moved)
+  let i = 0
+  return types.map((type) => (type.group === group ? nextGroup[i++]! : type))
+}
+
 export const FRAME_CONDITION_IDS = [
   DEEP_USED_FRAME,
   WAXED_SPRING_FRAME,
