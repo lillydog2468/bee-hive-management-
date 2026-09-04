@@ -47,7 +47,7 @@ export function StockScreen({ typeId }: { typeId: string }) {
     return (
       <Layout
         title="Add a type"
-        subtitle="Add only what you own or want to count. 0 is fine until you have a number."
+        subtitle="Add only what you own or want to count. Pick which section it belongs in. 0 is fine until you have a number."
         back={{ label: 'Unused kit', href: '#/unused' }}
       >
         <label className="field">
@@ -60,7 +60,7 @@ export function StockScreen({ typeId }: { typeId: string }) {
           />
         </label>
         <label className="field">
-          <span>Group</span>
+          <span>Section</span>
           <select
             value={newGroup}
             onChange={(event) =>
@@ -191,7 +191,7 @@ export function StockScreen({ typeId }: { typeId: string }) {
           />
         </label>
         <label className="field">
-          <span>Group</span>
+          <span>Section</span>
           <select
             value={type.group}
             onChange={(event) =>

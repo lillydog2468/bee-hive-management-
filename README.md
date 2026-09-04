@@ -45,7 +45,7 @@ Unused = owned stock minus kit currently assigned to a hive stack. Garage pad bo
 Every hive needs a bottom board, an inner cover and a lid. The hive screen will not let you turn those off once assigned. Two spare bottoms and two spare inner covers sit in Unused; they are not auto-placed on the L-yard hives. Garage pad bottoms and wooden lids are **not** unused stock.
 
 - Add or adjust owned stock by type (stepper or type a number). 0 means not counted yet.
-- Add a type (name, optional group, optional unit, optional deep/shallow frames tag) and delete any type, including the starter set.
+- Add a type (name, section — hive boxes / frames / tops and bottoms / other — optional unit, optional deep/shallow frames tag) and delete any type, including the starter set.
 - Assigning kit to a hive takes it out of unused.
 - Taking kit off a hive, or removing the hive, returns it.
 - Kit already on hives with owned still 0 (the 4-frame and 5-frame nuc boxes start this way) is **not counted yet**, not a blocker. Tap the row and type a number when you have one.

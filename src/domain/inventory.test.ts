@@ -180,7 +180,7 @@ describe('seed', () => {
 
   it('does not invent extra equipment types', () => {
     const state = createSeedState()
-    expect(state.version).toBe(8)
+    expect(state.version).toBe(9)
     expect(state.equipmentTypes.every((type) => type.builtIn === false)).toBe(
       true,
     )
@@ -833,5 +833,24 @@ describe('user-managed equipment types', () => {
       'Deep brood box',
     )
     expect(state.owned[DEEP_BOX]).toBe(20)
+  })
+
+  it('files starter types into hive boxes, frames, or tops and bottoms', () => {
+    const state = createSeedState()
+    const byId = Object.fromEntries(
+      state.equipmentTypes.map((type) => [type.id, type.group]),
+    )
+    expect(byId[DEEP_BOX]).toBe('hive-boxes')
+    expect(byId[SHALLOW_BOX]).toBe('hive-boxes')
+    expect(byId[NUC_BOX_4]).toBe('hive-boxes')
+    expect(byId[NUC_BOX_5]).toBe('hive-boxes')
+    expect(byId[DEEP_USED_FRAME]).toBe('frames')
+    expect(byId[WAXED_SPRING_FRAME]).toBe('frames')
+    expect(byId[UNBUILT_SPRING_FRAME]).toBe('frames')
+    expect(byId[SHALLOW_FRAME]).toBe('frames')
+    expect(byId[BOTTOM_BOARD]).toBe('tops-and-bottoms')
+    expect(byId[INNER_COVER]).toBe('tops-and-bottoms')
+    expect(byId[METAL_LID]).toBe('tops-and-bottoms')
+    expect(byId[WOODEN_LID]).toBe('tops-and-bottoms')
   })
 })

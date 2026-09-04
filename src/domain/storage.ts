@@ -98,19 +98,22 @@ function mergeTypes(existing: LooseEquipmentType[]): EquipmentType[] {
     if (STARTER_IDS.has(type.id) || type.builtIn) continue
     if (seen.has(type.id)) continue
     seen.add(type.id)
-    custom.push(normalizeEquipmentType(type))
+    custom.push(normalizeEquipmentType(type, true))
   }
   return [...STARTER_TYPES.map((type) => ({ ...type })), ...custom]
 }
 
-function keepExistingTypes(existing: LooseEquipmentType[]): EquipmentType[] {
+function keepExistingTypes(
+  existing: LooseEquipmentType[],
+  remapKnown: boolean,
+): EquipmentType[] {
   const seen = new Set<string>()
   const next: EquipmentType[] = []
   for (const type of existing) {
     if (!type.id || type.id === 'deep-frame') continue
     if (seen.has(type.id)) continue
     seen.add(type.id)
-    next.push(normalizeEquipmentType(type))
+    next.push(normalizeEquipmentType(type, remapKnown))
   }
   return next
 }
@@ -185,12 +188,13 @@ function toLatest(
   addGapPad: boolean,
   remeshStarters: boolean,
 ): AppState {
+  const remapKnown = state.version < 9
   const equipmentTypes = remeshStarters
     ? mergeTypes(state.equipmentTypes)
-    : keepExistingTypes(state.equipmentTypes)
+    : keepExistingTypes(state.equipmentTypes, remapKnown)
   const next: AppState = {
     ...state,
-    version: 8,
+    version: 9,
     equipmentTypes,
     owned: withOwnedDefaults(equipmentTypes, state.owned),
     hives: state.hives.map(migrateHive),
@@ -254,7 +258,12 @@ function toV5(
 
 export function migrateState(parsed: LooseState): AppState | null {
   if (!Array.isArray(parsed.hives) || !Array.isArray(parsed.pads)) return null
-  if (parsed.version === 8 || parsed.version === 7 || parsed.version === 6) {
+  if (
+    parsed.version === 9 ||
+    parsed.version === 8 ||
+    parsed.version === 7 ||
+    parsed.version === 6
+  ) {
     return toLatest(
       {
         ...parsed,

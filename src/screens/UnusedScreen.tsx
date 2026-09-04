@@ -40,7 +40,7 @@ export function UnusedScreen() {
   return (
     <Layout
       title="Unused kit"
-      subtitle="Your list only — add types, type owned counts, and delete anything you do not use. Unused is owned minus what is on a hive."
+      subtitle="Your list only, in four sections: hive boxes, frames, tops and bottoms, and other. Add types, type owned counts, and delete anything you do not use. Unused is owned minus what is on a hive."
     >
       <a className="primary link-btn" href="#/kit/new">
         Add a type
@@ -90,18 +90,14 @@ export function UnusedScreen() {
         </div>
       ) : null}
 
-      {state.equipmentTypes.length === 0 ? (
-        <p className="lede">
-          No kit types yet. Add one to start your list. Counts stay at 0 until
-          you type them.
-        </p>
-      ) : (
-        GROUP_ORDER.map((group) => {
-          const types = state.equipmentTypes.filter((type) => type.group === group)
-          if (types.length === 0) return null
-          return (
-            <section key={group} className="group">
-              <h2>{GROUP_LABELS[group]}</h2>
+      {GROUP_ORDER.map((group) => {
+        const types = state.equipmentTypes.filter((type) => type.group === group)
+        return (
+          <section key={group} className="group">
+            <h2>{GROUP_LABELS[group]}</h2>
+            {types.length === 0 ? (
+              <p className="card-copy">None in this section yet.</p>
+            ) : (
               <ul className="kit-list">
                 {types.map((type) => (
                   <KitRow
@@ -114,10 +110,10 @@ export function UnusedScreen() {
                   />
                 ))}
               </ul>
-            </section>
-          )
-        })
-      )}
+            )}
+          </section>
+        )
+      })}
 
       <p className="footnote">
         Tap a type to edit its name, owned count, or delete it. Assigning kit to

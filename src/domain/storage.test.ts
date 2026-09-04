@@ -28,7 +28,7 @@ describe('storage migrate', () => {
       })),
     }
     const next = migrateState(v1)
-    expect(next?.version).toBe(8)
+    expect(next?.version).toBe(9)
     expect(next?.pads.filter((pad) => pad.lockedBottomAndLid)).toHaveLength(10)
     expect(unusedForType(next!, WOODEN_LID)).toBe(0)
     expect(unusedForType(next!, METAL_LID)).toBe(5)
@@ -82,7 +82,7 @@ describe('storage migrate', () => {
     ).toBe(true)
   })
 
-  it('keeps existing owned counts and custom types when moving to v8', () => {
+  it('keeps existing owned counts and custom types when moving to v9', () => {
     const seed = createSeedState()
     const v7 = {
       ...seed,
@@ -118,18 +118,27 @@ describe('storage migrate', () => {
       },
     }
     const next = migrateState(v7)
-    expect(next?.version).toBe(8)
+    expect(next?.version).toBe(9)
     expect(next?.owned[DEEP_BOX]).toBe(20)
     expect(next?.owned['custom-excluder']).toBe(3)
     expect(next?.equipmentTypes.find((type) => type.id === METAL_LID)?.group).toBe(
-      'lids',
+      'tops-and-bottoms',
     )
+    expect(next?.equipmentTypes.find((type) => type.id === DEEP_BOX)?.group).toBe(
+      'hive-boxes',
+    )
+    expect(
+      next?.equipmentTypes.find((type) => type.id === 'bottom-board')?.group,
+    ).toBe('tops-and-bottoms')
     expect(
       next?.equipmentTypes.find((type) => type.id === 'custom-excluder')?.group,
     ).toBe('other')
     expect(next?.equipmentTypes.some((type) => type.id === 'round-feeder')).toBe(
       true,
     )
+    expect(
+      next?.equipmentTypes.find((type) => type.id === 'round-feeder')?.group,
+    ).toBe('other')
     expect(
       next?.equipmentTypes.find((type) => type.id === DEEP_USED_FRAME)
         ?.frameTotal,
@@ -161,5 +170,113 @@ describe('storage migrate', () => {
     )
     expect(next?.owned[DEEP_BOX]).toBe(20)
     expect(next?.owned[SHALLOW_FRAME]).toBeUndefined()
+  })
+
+  it('puts v8 types into hive boxes, frames, tops and bottoms, or other', () => {
+    const seed = createSeedState()
+    const v8 = {
+      ...seed,
+      version: 8 as const,
+      equipmentTypes: [
+        {
+          id: 'deep-box',
+          name: 'Deep box (10-frame)',
+          shortName: 'Deep box',
+          group: 'boxes',
+          builtIn: false,
+        },
+        {
+          id: 'shallow-frame',
+          name: 'Shallow frames',
+          shortName: 'Shallow frames',
+          group: 'frames',
+          builtIn: false,
+        },
+        {
+          id: 'bottom-board',
+          name: 'Bottom board',
+          shortName: 'Bottom board',
+          group: 'other',
+          builtIn: false,
+        },
+        {
+          id: 'metal-lid',
+          name: 'Metal lid',
+          shortName: 'Metal lid',
+          group: 'lids',
+          builtIn: false,
+        },
+        {
+          id: 'round-feeder',
+          name: 'Round feeder',
+          shortName: 'Round feeder',
+          group: 'feeding',
+          builtIn: false,
+        },
+        {
+          id: 'custom-excluder',
+          name: 'Queen excluder',
+          shortName: 'Excluder',
+          group: 'custom',
+          builtIn: false,
+        },
+      ],
+      owned: {
+        [DEEP_BOX]: 20,
+        [SHALLOW_FRAME]: 0,
+        'bottom-board': 2,
+        [METAL_LID]: 12,
+        'round-feeder': 0,
+        'custom-excluder': 3,
+      },
+    }
+    const next = migrateState(v8)
+    expect(next?.version).toBe(9)
+    expect(next?.owned[DEEP_BOX]).toBe(20)
+    expect(next?.owned['custom-excluder']).toBe(3)
+    expect(next?.equipmentTypes.find((type) => type.id === DEEP_BOX)?.group).toBe(
+      'hive-boxes',
+    )
+    expect(
+      next?.equipmentTypes.find((type) => type.id === SHALLOW_FRAME)?.group,
+    ).toBe('frames')
+    expect(
+      next?.equipmentTypes.find((type) => type.id === 'bottom-board')?.group,
+    ).toBe('tops-and-bottoms')
+    expect(next?.equipmentTypes.find((type) => type.id === METAL_LID)?.group).toBe(
+      'tops-and-bottoms',
+    )
+    expect(
+      next?.equipmentTypes.find((type) => type.id === 'round-feeder')?.group,
+    ).toBe('other')
+    expect(
+      next?.equipmentTypes.find((type) => type.id === 'custom-excluder')?.group,
+    ).toBe('other')
+  })
+
+  it('does not reshuffle a type Keith already filed after v9', () => {
+    const seed = createSeedState()
+    const v9 = {
+      ...seed,
+      version: 9 as const,
+      equipmentTypes: [
+        ...seed.equipmentTypes,
+        {
+          id: 'custom-excluder',
+          name: 'Queen excluder',
+          shortName: 'Excluder',
+          group: 'hive-boxes' as const,
+          builtIn: false,
+          unit: '',
+          frameTotal: null,
+        },
+      ],
+      owned: { ...seed.owned, 'custom-excluder': 3 },
+    }
+    const next = migrateState(v9)
+    expect(
+      next?.equipmentTypes.find((type) => type.id === 'custom-excluder')?.group,
+    ).toBe('hive-boxes')
+    expect(next?.owned['custom-excluder']).toBe(3)
   })
 })

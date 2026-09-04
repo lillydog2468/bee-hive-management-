@@ -16,7 +16,11 @@ export type HiveKind = 'full-size' | 'nuc-4' | 'nuc-5'
 
 export type PadSize = 'full-size' | 'nuc'
 
-export type EquipmentGroup = 'boxes' | 'frames' | 'lids' | 'other'
+export type EquipmentGroup =
+  | 'hive-boxes'
+  | 'frames'
+  | 'tops-and-bottoms'
+  | 'other'
 
 export type FrameTotal = 'deep' | 'shallow' | null
 
@@ -113,7 +117,7 @@ export type Pad = {
 }
 
 export type AppState = {
-  version: 8
+  version: 9
   appName: string
   equipmentTypes: EquipmentType[]
   owned: Record<string, number>

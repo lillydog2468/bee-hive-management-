@@ -5,7 +5,13 @@ import { PhotoField } from '../components/PhotoField.tsx'
 import { Sheet } from '../components/Sheet.tsx'
 import { Stepper } from '../components/Stepper.tsx'
 import { formatLitres, formatUkDate, todayInPrague } from '../domain/dates.ts'
-import { METAL_LID, WOODEN_LID } from '../domain/equipment.ts'
+import {
+  BOTTOM_BOARD,
+  INNER_COVER,
+  isLidChoice,
+  METAL_LID,
+  WOODEN_LID,
+} from '../domain/equipment.ts'
 import { hiveKindLabel, padSizeLabel } from '../domain/names.ts'
 import {
   hiveNeedsBottom,
@@ -54,7 +60,7 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
   const needsLid = hiveNeedsLidChoice(hive, pad)
   const needsBottom = hiveNeedsBottom(hive, pad)
   const needsInner = hiveNeedsInnerCover(hive)
-  const lidTypes = state.equipmentTypes.filter((item) => item.group === 'lids')
+  const lidTypes = state.equipmentTypes.filter(isLidChoice)
   const metalLidLocked = hiveShouldHaveMetalLid(hive, pad)
   const hasReturnableKit = hive.stack.some(
     (layer) =>
@@ -620,9 +626,9 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
             {state.equipmentTypes
               .filter(
                 (item) =>
-                  item.id !== 'bottom-board' &&
-                  item.id !== 'inner-cover' &&
-                  item.group !== 'lids',
+                  item.id !== BOTTOM_BOARD &&
+                  item.id !== INNER_COVER &&
+                  !isLidChoice(item),
               )
               .map((type) => (
               <button

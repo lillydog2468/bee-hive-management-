@@ -36,10 +36,16 @@ function starter(
 
 /** Short list Keith can delete. Frame lots keep his existing counts. No feeders. */
 export const STARTER_TYPES: EquipmentType[] = [
-  starter(DEEP_BOX, 'Deep box (10-frame)', 'Deep box', 'boxes', 'boxes'),
-  starter(SHALLOW_BOX, 'Shallow box (10-frame)', 'Shallow box', 'boxes', 'boxes'),
-  starter(NUC_BOX_4, '4-frame nuc box', '4-frame nuc', 'boxes', 'boxes'),
-  starter(NUC_BOX_5, '5-frame nuc box', '5-frame nuc', 'boxes', 'boxes'),
+  starter(DEEP_BOX, 'Deep box (10-frame)', 'Deep box', 'hive-boxes', 'boxes'),
+  starter(
+    SHALLOW_BOX,
+    'Shallow box (10-frame)',
+    'Shallow box',
+    'hive-boxes',
+    'boxes',
+  ),
+  starter(NUC_BOX_4, '4-frame nuc box', '4-frame nuc', 'hive-boxes', 'boxes'),
+  starter(NUC_BOX_5, '5-frame nuc box', '5-frame nuc', 'hive-boxes', 'boxes'),
   starter(
     DEEP_USED_FRAME,
     'Deep used frames',
@@ -70,26 +76,26 @@ export const STARTER_TYPES: EquipmentType[] = [
     'frames',
     'shallow',
   ),
-  starter(BOTTOM_BOARD, 'Bottom board', 'Bottom board', 'other', ''),
-  starter(INNER_COVER, 'Inner cover', 'Inner cover', 'other', ''),
-  starter(METAL_LID, 'Metal lid', 'Metal lid', 'lids', ''),
-  starter(WOODEN_LID, 'Wooden lid', 'Wooden lid', 'lids', ''),
+  starter(BOTTOM_BOARD, 'Bottom board', 'Bottom board', 'tops-and-bottoms', ''),
+  starter(INNER_COVER, 'Inner cover', 'Inner cover', 'tops-and-bottoms', ''),
+  starter(METAL_LID, 'Metal lid', 'Metal lid', 'tops-and-bottoms', ''),
+  starter(WOODEN_LID, 'Wooden lid', 'Wooden lid', 'tops-and-bottoms', ''),
 ]
 
 /** @deprecated Use STARTER_TYPES. Kept so older migrate paths still have a name. */
 export const BUILTIN_TYPES = STARTER_TYPES
 
 export const GROUP_LABELS: Record<EquipmentGroup, string> = {
-  boxes: 'Boxes',
+  'hive-boxes': 'Hive boxes',
   frames: 'Frames',
-  lids: 'Lids',
+  'tops-and-bottoms': 'Tops and bottoms',
   other: 'Other',
 }
 
 export const GROUP_ORDER: EquipmentGroup[] = [
-  'boxes',
+  'hive-boxes',
   'frames',
-  'lids',
+  'tops-and-bottoms',
   'other',
 ]
 
@@ -130,7 +136,7 @@ export function nucBoxType(kind: 'nuc-4' | 'nuc-5'): string {
 export const STARTER_IDS = new Set(STARTER_TYPES.map((type) => type.id))
 
 export function defaultUnitForGroup(group: EquipmentGroup): string {
-  if (group === 'boxes') return 'boxes'
+  if (group === 'hive-boxes') return 'boxes'
   if (group === 'frames') return 'frames'
   return ''
 }
@@ -141,20 +147,74 @@ export function defaultFrameTotal(typeId: string): FrameTotal {
   return null
 }
 
+const NEW_GROUPS = new Set<EquipmentGroup>([
+  'hive-boxes',
+  'frames',
+  'tops-and-bottoms',
+  'other',
+])
+
+/** Known starter IDs land in the section Keith asked for. Custom types follow the saved group. */
+export function defaultSectionForType(
+  typeId: string,
+  oldGroup?: string,
+): EquipmentGroup {
+  if (
+    typeId === DEEP_BOX ||
+    typeId === SHALLOW_BOX ||
+    typeId === NUC_BOX_4 ||
+    typeId === NUC_BOX_5
+  ) {
+    return 'hive-boxes'
+  }
+  if (
+    typeId === DEEP_USED_FRAME ||
+    typeId === WAXED_SPRING_FRAME ||
+    typeId === UNBUILT_SPRING_FRAME ||
+    typeId === SHALLOW_FRAME
+  ) {
+    return 'frames'
+  }
+  if (
+    typeId === BOTTOM_BOARD ||
+    typeId === INNER_COVER ||
+    typeId === METAL_LID ||
+    typeId === WOODEN_LID
+  ) {
+    return 'tops-and-bottoms'
+  }
+  if (typeId === ROUND_FEEDER || typeId === FEEDING_JAR) return 'other'
+  if (oldGroup === 'hive-boxes' || oldGroup === 'boxes') return 'hive-boxes'
+  if (oldGroup === 'frames') return 'frames'
+  if (
+    oldGroup === 'tops-and-bottoms' ||
+    oldGroup === 'lids' ||
+    oldGroup === 'parts'
+  ) {
+    return 'tops-and-bottoms'
+  }
+  return 'other'
+}
+
 export function migrateEquipmentGroup(
   group: string,
   typeId: string,
+  remapKnown = true,
 ): EquipmentGroup {
-  if (
-    group === 'boxes' ||
-    group === 'frames' ||
-    group === 'lids' ||
-    group === 'other'
-  ) {
-    return group
+  if (!remapKnown && NEW_GROUPS.has(group as EquipmentGroup)) {
+    return group as EquipmentGroup
   }
-  if (typeId === METAL_LID || typeId === WOODEN_LID) return 'lids'
-  return 'other'
+  return defaultSectionForType(typeId, group)
+}
+
+/** Lids Keith can put on a hive. Bottoms and inner covers stay in the same section but are not lids. */
+export function isLidChoice(type: {
+  id: string
+  group: EquipmentGroup
+}): boolean {
+  if (type.id === BOTTOM_BOARD || type.id === INNER_COVER) return false
+  if (type.id === METAL_LID || type.id === WOODEN_LID) return true
+  return type.group === 'tops-and-bottoms'
 }
 
 export type LooseEquipmentType = {
@@ -167,8 +227,11 @@ export type LooseEquipmentType = {
   frameTotal?: FrameTotal | null
 }
 
-export function normalizeEquipmentType(raw: LooseEquipmentType): EquipmentType {
-  const group = migrateEquipmentGroup(raw.group ?? 'other', raw.id)
+export function normalizeEquipmentType(
+  raw: LooseEquipmentType,
+  remapKnown = true,
+): EquipmentType {
+  const group = migrateEquipmentGroup(raw.group ?? 'other', raw.id, remapKnown)
   const name = (raw.name ?? raw.shortName ?? 'Untitled').trim() || 'Untitled'
   const shortName = (raw.shortName ?? name).trim() || name
   const hasFrameTotal = Object.prototype.hasOwnProperty.call(raw, 'frameTotal')
