@@ -188,11 +188,10 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
           <div>
             <h2>Parts</h2>
             <p className="card-copy">
-              Bottom board, inner cover, lid, and anything else on this hive
-              that is not a box in the stack above — queen excluder, feeder,
-              mouse guard, frames you want counted, or a type you add now.
-              Taken from unused when it goes on; back to unused when you remove
-              it.
+              Add or remove any part on this hive: bottom, inner cover, lid,
+              queen excluder, or a type you add now. Taken from unused when it
+              goes on; back to unused when you remove it. A garage pad’s bottom
+              board and wooden lid stay on that pad.
             </p>
           </div>
           <button
@@ -287,7 +286,7 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         {parts.length === 0 && !needsBottom && !needsInner && !needsLid ? (
           <p className="card-copy">No parts on this hive yet.</p>
         ) : parts.length > 0 ? (
-          <ul className="extra-list">
+          <ul className="extra-list parts-list">
             {parts.map((layer) => (
               <PartRow
                 key={layer.id}
@@ -822,10 +821,12 @@ function PartRow({
         {note ? <span className="lock-note">{note}</span> : null}
       </span>
       {canRemove ? (
-        <button type="button" className="text-btn" onClick={onRemove}>
+        <button type="button" className="part-remove" onClick={onRemove}>
           Remove
         </button>
-      ) : null}
+      ) : (
+        <span className="part-locked">Stays here</span>
+      )}
     </li>
   )
 }

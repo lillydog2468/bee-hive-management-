@@ -1063,6 +1063,36 @@ fieldset.field legend {
   border-top: 1px solid var(--line);
 }
 
+.parts-list li {
+  align-items: center;
+  padding: 0.55rem 0;
+}
+
+.part-remove {
+  flex: none;
+  min-height: 2.5rem;
+  min-width: 5.5rem;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  font-weight: 600;
+}
+
+.part-locked {
+  flex: none;
+  min-height: 2.5rem;
+  min-width: 5.5rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: var(--paper-deep);
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+}
+
 .sheet-root {
   position: fixed;
   inset: 0;
