@@ -4,7 +4,9 @@ import {
   DEEP_BOX,
   DEEP_USED_FRAME,
   INNER_COVER,
+  isLidChoice,
   METAL_LID,
+  QUEEN_EXCLUDER,
   NUC_BOX_4,
   NUC_BOX_5,
   SHALLOW_BOX,
@@ -180,7 +182,7 @@ describe('seed', () => {
 
   it('does not invent extra equipment types', () => {
     const state = createSeedState()
-    expect(state.version).toBe(9)
+    expect(state.version).toBe(10)
     expect(state.equipmentTypes.every((type) => type.builtIn === false)).toBe(
       true,
     )
@@ -197,6 +199,7 @@ describe('seed', () => {
       'inner-cover',
       'metal-lid',
       'wooden-lid',
+      'queen-excluder',
     ])
   })
 })
@@ -411,6 +414,41 @@ describe('reducer', () => {
       DEEP_BOX,
       METAL_LID,
     ])
+  })
+
+  it('returns an unused-pool bottom or lid to unused when removed from Parts', () => {
+    let state = createSeedState()
+    state = reducer(state, {
+      type: 'toggle-part',
+      hiveId: 'hive-yard-1',
+      part: 'bottom',
+      on: true,
+    })
+    expect(unusedForType(state, BOTTOM_BOARD)).toBe(1)
+    const bottom = state.hives
+      .find((item) => item.id === 'hive-yard-1')
+      ?.stack.find((layer) => layer.role === 'bottom')
+    state = reducer(state, {
+      type: 'remove-layer',
+      hiveId: 'hive-yard-1',
+      layerId: bottom!.id,
+    })
+    expect(unusedForType(state, BOTTOM_BOARD)).toBe(2)
+    const lid = state.hives
+      .find((item) => item.id === 'hive-yard-1')
+      ?.stack.find((layer) => layer.role === 'lid')
+    expect(lid?.typeId).toBe(METAL_LID)
+    state = reducer(state, {
+      type: 'remove-layer',
+      hiveId: 'hive-yard-1',
+      layerId: lid!.id,
+    })
+    expect(unusedForType(state, METAL_LID)).toBe(6)
+    expect(
+      state.hives
+        .find((item) => item.id === 'hive-yard-1')
+        ?.stack.some((layer) => layer.role === 'lid'),
+    ).toBe(false)
   })
 
   it('lets a hive take a spare bottom without inventing extra stock', () => {
@@ -869,6 +907,80 @@ describe('user-managed equipment types', () => {
     expect(byId[INNER_COVER]).toBe('tops-and-bottoms')
     expect(byId[METAL_LID]).toBe('tops-and-bottoms')
     expect(byId[WOODEN_LID]).toBe('tops-and-bottoms')
+    expect(byId[QUEEN_EXCLUDER]).toBe('tops-and-bottoms')
+  })
+
+  it('starts queen excluders at owned 0 and not on any hive', () => {
+    const state = createSeedState()
+    expect(state.owned[QUEEN_EXCLUDER]).toBe(0)
+    expect(unusedForType(state, QUEEN_EXCLUDER)).toBe(0)
+    expect(tallyInUse(state.hives)[QUEEN_EXCLUDER] ?? 0).toBe(0)
+    expect(state.owned[DEEP_BOX]).toBe(20)
+  })
+
+  it('puts a queen excluder on a hive from unused and returns it when removed', () => {
+    let state = createSeedState()
+    state = reducer(state, { type: 'set-owned', typeId: QUEEN_EXCLUDER, owned: 2 })
+    expect(unusedForType(state, QUEEN_EXCLUDER)).toBe(2)
+    state = reducer(state, {
+      type: 'add-part',
+      hiveId: 'hive-yard-1',
+      typeId: QUEEN_EXCLUDER,
+      extraId: 'excluder-1',
+    })
+    expect(unusedForType(state, QUEEN_EXCLUDER)).toBe(1)
+    expect(state.owned[QUEEN_EXCLUDER]).toBe(2)
+    expect(
+      state.hives
+        .find((item) => item.id === 'hive-yard-1')
+        ?.stack.some((layer) => layer.typeId === QUEEN_EXCLUDER),
+    ).toBe(true)
+    const layer = state.hives
+      .find((item) => item.id === 'hive-yard-1')
+      ?.stack.find((item) => item.typeId === QUEEN_EXCLUDER)
+    state = reducer(state, {
+      type: 'remove-layer',
+      hiveId: 'hive-yard-1',
+      layerId: layer!.id,
+    })
+    expect(unusedForType(state, QUEEN_EXCLUDER)).toBe(2)
+    expect(
+      state.hives
+        .find((item) => item.id === 'hive-yard-1')
+        ?.stack.some((layer) => layer.typeId === QUEEN_EXCLUDER),
+    ).toBe(false)
+    expect(unusedForType(state, METAL_LID)).toBe(5)
+    expect(unusedForType(state, DEEP_BOX)).toBe(8)
+  })
+
+  it('adds a new part type onto a hive at owned 0 without inventing stock', () => {
+    let state = createSeedState()
+    state = reducer(state, {
+      type: 'add-equipment-type',
+      id: 'custom-mouse-guard',
+      name: 'Mouse guard',
+      group: 'other',
+    })
+    state = reducer(state, {
+      type: 'add-part',
+      hiveId: 'hive-yard-1',
+      typeId: 'custom-mouse-guard',
+      extraId: 'guard-1',
+    })
+    expect(state.owned['custom-mouse-guard']).toBe(0)
+    expect(unusedForType(state, 'custom-mouse-guard')).toBe(-1)
+    expect(
+      isUncountedOnHives(state.owned['custom-mouse-guard'] ?? 0, 1),
+    ).toBe(true)
+    expect(state.owned[DEEP_BOX]).toBe(20)
+    expect(unusedForType(state, QUEEN_EXCLUDER)).toBe(0)
+  })
+
+  it('does not treat a queen excluder as a lid choice', () => {
+    const state = createSeedState()
+    const type = state.equipmentTypes.find((item) => item.id === QUEEN_EXCLUDER)
+    expect(type?.group).toBe('tops-and-bottoms')
+    expect(isLidChoice(type!)).toBe(false)
   })
 
   it('reorders types within a section without changing other sections or owned counts', () => {

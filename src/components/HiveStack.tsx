@@ -11,7 +11,7 @@ const ROLE_LABEL: Record<string, string> = {
   feeder: 'Feeder',
   'feeding-body': 'Extra body (anti-robbing)',
   lid: 'Lid',
-  extra: 'Other kit',
+  extra: 'Part',
 }
 
 const REQUIRED_ROLES = new Set(['bottom', 'inner-cover', 'lid'])

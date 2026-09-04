@@ -232,7 +232,7 @@ export function createSeedState(): AppState {
   owned[UNBUILT_SPRING_FRAME] = 50
 
   return {
-    version: 9,
+    version: 10,
     appName: 'Hives',
     equipmentTypes: STARTER_TYPES.map((type) => ({ ...type })),
     owned,

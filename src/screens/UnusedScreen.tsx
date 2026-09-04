@@ -11,6 +11,7 @@ import {
   SHALLOW_FRAME,
   UNBUILT_SPRING_FRAME,
   WAXED_SPRING_FRAME,
+  QUEEN_EXCLUDER,
   WOODEN_LID,
 } from '../domain/equipment.ts'
 import { framesTotalForTag } from '../domain/inventory.ts'
@@ -145,6 +146,9 @@ function starterNote(typeId: string): string | undefined {
   }
   if (typeId === WOODEN_LID) {
     return 'garage pad lids stay on those pads; extra unused wooden lids not counted'
+  }
+  if (typeId === QUEEN_EXCLUDER) {
+    return 'not counted at start; type a number when you have one, then put it on a hive from Parts'
   }
   return undefined
 }

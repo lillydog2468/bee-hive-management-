@@ -199,6 +199,33 @@ export function KitIllustration({ typeId }: { typeId: string }) {
       </Svg>
     )
   }
+  if (typeId === 'queen-excluder') {
+    return (
+      <Svg title="Queen excluder">
+        <rect
+          x="8"
+          y="14"
+          width="32"
+          height="20"
+          rx="1.5"
+          fill={wood}
+          stroke={woodDark}
+          strokeWidth="1.6"
+        />
+        {[0, 1, 2, 3, 4].map((i) => (
+          <line
+            key={i}
+            x1={12 + i * 6}
+            y1="17"
+            x2={12 + i * 6}
+            y2="31"
+            stroke={cream}
+            strokeWidth="2"
+          />
+        ))}
+      </Svg>
+    )
+  }
   if (typeId === 'round-feeder') {
     return (
       <Svg title="Round feeder">

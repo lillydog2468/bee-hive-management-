@@ -1,5 +1,8 @@
 import {
+  BOTTOM_BOARD,
   defaultUnitForGroup,
+  INNER_COVER,
+  isLidChoice,
   METAL_LID,
   nucBoxType,
   reorderTypesInGroup,
@@ -9,6 +12,7 @@ import { stripTypeFromStacks, typeOnStacksCount } from './inventory.ts'
 import { defaultHiveName, defaultPadName } from './names.ts'
 import {
   canRemoveLayer,
+  ensureGaragePadParts,
   ensureRequiredParts,
   hiveShouldHaveMetalLid,
   stackAfterClear,
@@ -18,6 +22,7 @@ import { hasLockedBottomAndLid, hivePad } from './siteLocked.ts'
 import {
   addExtra,
   countRole,
+  hasRole,
   removeLayer,
   setFeeding,
   setRoleCount,
@@ -85,6 +90,7 @@ export type Action =
       lidTypeId?: string
     }
   | { type: 'set-feeding'; hiveId: string; feeding: FeedingConfig | null }
+  | { type: 'add-part'; hiveId: string; typeId: string; extraId?: string }
   | { type: 'add-extra'; hiveId: string; extraId: string; typeId: string }
   | { type: 'remove-layer'; hiveId: string; layerId: string }
   | { type: 'clear-stack'; hiveId: string }
@@ -164,6 +170,55 @@ function withHive(
   }
 }
 
+function putTypeOnHive(
+  state: AppState,
+  hiveId: string,
+  typeId: string,
+  extraId?: string,
+): AppState {
+  const type = state.equipmentTypes.find((item) => item.id === typeId)
+  if (!type) return state
+  return withHive(state, hiveId, (hive) => {
+    const pad = hivePad(state, hive)
+    const locked = hasLockedBottomAndLid(pad)
+    if (type.id === BOTTOM_BOARD) {
+      if (locked || hasRole(hive.stack, 'bottom')) return hive
+      return {
+        ...hive,
+        stack: toggleRole(hive.stack, 'bottom', BOTTOM_BOARD, true, ids.layer),
+      }
+    }
+    if (type.id === INNER_COVER) {
+      if (hasRole(hive.stack, 'inner-cover')) return hive
+      return {
+        ...hive,
+        stack: toggleRole(
+          hive.stack,
+          'inner-cover',
+          INNER_COVER,
+          true,
+          ids.layer,
+        ),
+      }
+    }
+    if (isLidChoice(type)) {
+      if (locked || hasRole(hive.stack, 'lid')) return hive
+      const lidTypeId = hiveShouldHaveMetalLid(hive, pad) ? METAL_LID : type.id
+      if (!state.equipmentTypes.some((item) => item.id === lidTypeId)) {
+        return hive
+      }
+      return {
+        ...hive,
+        stack: toggleRole(hive.stack, 'lid', lidTypeId, true, ids.layer),
+      }
+    }
+    return {
+      ...hive,
+      stack: addExtra(hive.stack, type.id, () => extraId ?? ids.layer()),
+    }
+  })
+}
+
 function clearPadOccupation(state: AppState, hiveId: string): AppState {
   return {
     ...state,
@@ -204,7 +259,15 @@ const ids = {
 }
 
 export function reducer(state: AppState, action: Action): AppState {
-  return ensureRequiredParts(reduce(state, action))
+  const next = reduce(state, action)
+  if (
+    action.type === 'add-hive' ||
+    action.type === 'move-hive' ||
+    action.type === 'place-hive-on-pad'
+  ) {
+    return ensureRequiredParts(next)
+  }
+  return ensureGaragePadParts(next)
 }
 
 function reduce(state: AppState, action: Action): AppState {
@@ -464,6 +527,8 @@ function reduce(state: AppState, action: Action): AppState {
         ...hive,
         stack: setFeeding(hive.stack, action.feeding, ids.layer),
       }))
+    case 'add-part':
+      return putTypeOnHive(state, action.hiveId, action.typeId, action.extraId)
     case 'add-extra':
       return withHive(state, action.hiveId, (hive) => ({
         ...hive,

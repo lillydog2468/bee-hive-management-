@@ -42,20 +42,20 @@ Hive names are temporary and can be renamed. Marker positions on the aerials are
 
 Unused = owned stock minus kit currently assigned to a hive stack. Garage pad bottoms and wooden lids are **not** unused stock: they belong to those pads only and cannot be put on the L-yard or the far-side hive.
 
-Every hive needs a bottom board, an inner cover and a lid. The hive screen will not let you turn those off once assigned. Two spare bottoms and two spare inner covers sit in Unused; they are not auto-placed on the L-yard hives. Garage pad bottoms and wooden lids are **not** unused stock.
+Every hive needs a bottom board, an inner cover and a lid. On the hive screen those sit in **one editable Parts list** with anything else you put on (queen excluder, feeder, mouse guard, frames you want counted, or a type you add there). Add a part from unused, or add a new type and put it on; remove sends it back to unused. Garage pad bottoms and wooden lids stay on those pads and cannot be removed here. Two spare bottoms and two spare inner covers sit in Unused; they are not auto-placed on the L-yard hives.
 
 - Add or adjust owned stock by type (stepper or type a number). 0 means not counted yet.
-- Add a type from each Unused section (hive boxes / frames / tops and bottoms / other): name, owned count, optional photo. Delete any type, including the starter set. Drag the handle beside a type to reorder it within that section (saved in this browser).
+- Add a type from each Unused section (hive boxes / frames / tops and bottoms / other): name, owned count, optional photo. Delete any type, including the starter set. Drag the handle beside a type to reorder it within that section (saved in this browser). Queen excluder starts at **0 owned**.
 - Assigning kit to a hive takes it out of unused.
 - Taking kit off a hive, or removing the hive, returns it.
 - Kit already on hives with owned still 0 (the 4-frame and 5-frame nuc boxes start this way) is **not counted yet**, not a blocker. Tap the row and type a number when you have one.
 - If a type is on hive stacks, delete asks to take those pieces off first. That does not invent extra unused stock.
 
-Starter types (all deletable): deep box, shallow box, 4-frame nuc box, 5-frame nuc box, deep used frames, waxed ready for spring (mixed, no subtype counts), unbuilt ready for spring (mix pending more detail), shallow frames (not a split of the spring lots), bottom board, inner cover, metal lid, wooden lid. Unused and Stock only show types in your list.
+Starter types (all deletable): deep box, shallow box, 4-frame nuc box, 5-frame nuc box, deep used frames, waxed ready for spring (mixed, no subtype counts), unbuilt ready for spring (mix pending more detail), shallow frames (not a split of the spring lots), bottom board, inner cover, metal lid, wooden lid, queen excluder (owned 0). Unused and Stock only show types in your list.
 
 ## Hives and stacks
 
-Hives belong to a site. Every hive needs a bottom board, an inner cover and a lid — assign those from Unused; the stack screen will not let you turn them off once on. For the seven large L-yard hives the lid is metal. Map glyphs show nuc box count as lines and large 1-box vs 2-box as Keith drew. Nucs still need a lid type chosen.
+Hives belong to a site. Every hive needs a bottom board, an inner cover and a lid — assign those from Unused. The Parts list is editable: add or remove any unused-pool part. Garage pad bottoms and wooden lids stay on those pads. For the seven large L-yard hives the lid starts as metal. Map glyphs show nuc box count as lines and large 1-box vs 2-box as Keith drew. Nucs still need a lid type chosen.
 
 L-yard hives and kit can all be moved. Move a hive between sites, including onto an empty garage pad — that pad’s bottom board and wooden lid stay on the pad and cannot be used anywhere else.
 

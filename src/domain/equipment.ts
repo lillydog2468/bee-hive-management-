@@ -12,6 +12,7 @@ export const BOTTOM_BOARD = 'bottom-board'
 export const INNER_COVER = 'inner-cover'
 export const METAL_LID = 'metal-lid'
 export const WOODEN_LID = 'wooden-lid'
+export const QUEEN_EXCLUDER = 'queen-excluder'
 export const ROUND_FEEDER = 'round-feeder'
 export const FEEDING_JAR = 'feeding-jar'
 
@@ -80,6 +81,13 @@ export const STARTER_TYPES: EquipmentType[] = [
   starter(INNER_COVER, 'Inner cover', 'Inner cover', 'tops-and-bottoms', ''),
   starter(METAL_LID, 'Metal lid', 'Metal lid', 'tops-and-bottoms', ''),
   starter(WOODEN_LID, 'Wooden lid', 'Wooden lid', 'tops-and-bottoms', ''),
+  starter(
+    QUEEN_EXCLUDER,
+    'Queen excluder',
+    'Queen excluder',
+    'tops-and-bottoms',
+    '',
+  ),
 ]
 
 /** @deprecated Use STARTER_TYPES. Kept so older migrate paths still have a name. */
@@ -219,7 +227,8 @@ export function defaultSectionForType(
     typeId === BOTTOM_BOARD ||
     typeId === INNER_COVER ||
     typeId === METAL_LID ||
-    typeId === WOODEN_LID
+    typeId === WOODEN_LID ||
+    typeId === QUEEN_EXCLUDER
   ) {
     return 'tops-and-bottoms'
   }
@@ -247,14 +256,51 @@ export function migrateEquipmentGroup(
   return defaultSectionForType(typeId, group)
 }
 
-/** Lids Keith can put on a hive. Bottoms and inner covers stay in the same section but are not lids. */
+export function looksLikeQueenExcluder(type: {
+  id: string
+  name?: string
+  shortName?: string
+}): boolean {
+  if (type.id === QUEEN_EXCLUDER) return true
+  return /queen\s*excluder/i.test(`${type.name ?? ''} ${type.shortName ?? ''}`)
+}
+
+export function findQueenExcluderType<T extends { id: string; name?: string; shortName?: string }>(
+  types: T[],
+): T | undefined {
+  return (
+    types.find((type) => type.id === QUEEN_EXCLUDER) ??
+    types.find(looksLikeQueenExcluder)
+  )
+}
+
+/** Lids Keith can put on a hive. Bottoms, covers and excluders in the same section are not lids. */
 export function isLidChoice(type: {
   id: string
+  name?: string
+  shortName?: string
   group: EquipmentGroup
 }): boolean {
-  if (type.id === BOTTOM_BOARD || type.id === INNER_COVER) return false
   if (type.id === METAL_LID || type.id === WOODEN_LID) return true
+  if (
+    type.id === BOTTOM_BOARD ||
+    type.id === INNER_COVER ||
+    type.id === QUEEN_EXCLUDER ||
+    looksLikeQueenExcluder(type)
+  ) {
+    return false
+  }
   return type.group === 'tops-and-bottoms'
+}
+
+/** Boxes counted on the brood / super / nuc steppers, not as extra hive parts. */
+export function isMainBoxType(typeId: string): boolean {
+  return (
+    typeId === DEEP_BOX ||
+    typeId === SHALLOW_BOX ||
+    typeId === NUC_BOX_4 ||
+    typeId === NUC_BOX_5
+  )
 }
 
 export type LooseEquipmentType = {

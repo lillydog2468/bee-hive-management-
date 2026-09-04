@@ -2,12 +2,15 @@ import {
   BOTTOM_BOARD,
   DEEP_USED_FRAME,
   INNER_COVER,
+  looksLikeQueenExcluder,
   METAL_LID,
   normalizeEquipmentType,
+  QUEEN_EXCLUDER,
   STARTER_IDS,
   STARTER_TYPES,
   UNBUILT_SPRING_FRAME,
   WAXED_SPRING_FRAME,
+  WOODEN_LID,
   YARD_FULL_SIZE_IDS,
   type LooseEquipmentType,
 } from './equipment.ts'
@@ -188,20 +191,53 @@ function toLatest(
   addGapPad: boolean,
   remeshStarters: boolean,
 ): AppState {
-  const remapKnown = state.version < 9
-  const equipmentTypes = remeshStarters
+  const incomingVersion = state.version
+  const remapKnown = incomingVersion < 9
+  const baseTypes = remeshStarters
     ? mergeTypes(state.equipmentTypes)
     : keepExistingTypes(state.equipmentTypes, remapKnown)
+  const { equipmentTypes, owned } = withQueenExcluderIfNeeded(
+    baseTypes,
+    withOwnedDefaults(baseTypes, state.owned),
+    incomingVersion,
+  )
   const next: AppState = {
     ...state,
-    version: 9,
+    version: 10,
     equipmentTypes,
-    owned: withOwnedDefaults(equipmentTypes, state.owned),
+    owned,
     hives: state.hives.map(migrateHive),
     pads: addGapPad ? withHomeYardGapPad(state.pads) : state.pads,
     splits: state.splits ?? [],
   }
   return ensureRequiredParts(next)
+}
+
+/** One-time: a Queen excluder type at owned 0, unless Keith already has one. */
+function withQueenExcluderIfNeeded(
+  types: EquipmentType[],
+  owned: Record<string, number>,
+  incomingVersion: number,
+): { equipmentTypes: EquipmentType[]; owned: Record<string, number> } {
+  if (incomingVersion >= 10) return { equipmentTypes: types, owned }
+  if (types.some(looksLikeQueenExcluder)) return { equipmentTypes: types, owned }
+  const starter = STARTER_TYPES.find((type) => type.id === QUEEN_EXCLUDER)
+  if (!starter) return { equipmentTypes: types, owned }
+  const woodenAt = types.findIndex((type) => type.id === WOODEN_LID)
+  const topsAt = types.reduce(
+    (last, type, index) => (type.group === 'tops-and-bottoms' ? index : last),
+    -1,
+  )
+  const at = woodenAt >= 0 ? woodenAt + 1 : topsAt >= 0 ? topsAt + 1 : types.length
+  const equipmentTypes = [
+    ...types.slice(0, at),
+    { ...starter },
+    ...types.slice(at),
+  ]
+  return {
+    equipmentTypes,
+    owned: { ...owned, [QUEEN_EXCLUDER]: owned[QUEEN_EXCLUDER] ?? 0 },
+  }
 }
 
 function applyV3(parsed: LooseState): AppState {
@@ -259,6 +295,7 @@ function toV5(
 export function migrateState(parsed: LooseState): AppState | null {
   if (!Array.isArray(parsed.hives) || !Array.isArray(parsed.pads)) return null
   if (
+    parsed.version === 10 ||
     parsed.version === 9 ||
     parsed.version === 8 ||
     parsed.version === 7 ||

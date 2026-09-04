@@ -7,13 +7,17 @@ import { Stepper } from '../components/Stepper.tsx'
 import { formatLitres, formatUkDate, todayInPrague } from '../domain/dates.ts'
 import {
   BOTTOM_BOARD,
+  defaultUnitForGroup,
+  GROUP_LABELS,
+  GROUP_ORDER,
   INNER_COVER,
   isLidChoice,
-  METAL_LID,
-  WOODEN_LID,
+  isMainBoxType,
 } from '../domain/equipment.ts'
+import { unusedCount } from '../domain/inventory.ts'
 import { hiveKindLabel, padSizeLabel } from '../domain/names.ts'
 import {
+  canRemoveLayer,
   hiveNeedsBottom,
   hiveNeedsInnerCover,
   hiveNeedsLidChoice,
@@ -21,8 +25,10 @@ import {
 } from '../domain/requiredParts.ts'
 import { displayStack, hasLockedBottomAndLid, hivePad } from '../domain/siteLocked.ts'
 import { countRole, readingFeeding } from '../domain/stack.ts'
-import type { FeedingConfig } from '../domain/types.ts'
+import type { EquipmentGroup, EquipmentType, FeedingConfig, StackLayer } from '../domain/types.ts'
 import { useStore } from '../state/context.ts'
+
+const PART_ROLES = new Set(['bottom', 'inner-cover', 'lid', 'extra'])
 
 export function HiveScreen({ hiveId }: { hiveId: string }) {
   const { state, dispatch, go, photos, setHivePhoto } = useStore()
@@ -30,7 +36,7 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
   const [renaming, setRenaming] = useState(false)
   const [name, setName] = useState(hive?.name ?? '')
   const [moveOpen, setMoveOpen] = useState(false)
-  const [extraOpen, setExtraOpen] = useState(false)
+  const [partOpen, setPartOpen] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
   const [feedOpen, setFeedOpen] = useState(false)
   const [feedDate, setFeedDate] = useState(todayInPrague)
@@ -55,8 +61,7 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
   const supers = countRole(hive.stack, 'super')
   const nucBoxes = countRole(hive.stack, 'nuc-box')
   const feeding = readingFeeding(hive.stack)
-  const lid = shown.find((layer) => layer.role === 'lid')
-  const extras = hive.stack.filter((layer) => layer.role === 'extra')
+  const parts = shown.filter((layer) => PART_ROLES.has(layer.role))
   const needsLid = hiveNeedsLidChoice(hive, pad)
   const needsBottom = hiveNeedsBottom(hive, pad)
   const needsInner = hiveNeedsInnerCover(hive)
@@ -179,17 +184,29 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
       )}
 
       <section className="card">
-        <h2>Parts</h2>
-        <p className="card-copy">
-          Every hive needs a bottom board, an inner cover and a lid. Two spare
-          bottoms and two spare inner covers sit in Unused — they are not
-          auto-assigned. You can put one on now even if you have not counted
-          every board yet. Once on a hive they cannot be turned off.
-        </p>
+        <div className="card-row">
+          <div>
+            <h2>Parts</h2>
+            <p className="card-copy">
+              Bottom board, inner cover, lid, and anything else on this hive
+              that is not a box in the stack above — queen excluder, feeder,
+              mouse guard, frames you want counted, or a type you add now.
+              Taken from unused when it goes on; back to unused when you remove
+              it.
+            </p>
+          </div>
+          <button
+            className="chip"
+            type="button"
+            onClick={() => setPartOpen(true)}
+          >
+            Add part
+          </button>
+        </div>
         {needsBottom ? (
           <div className="lid-needed">
             <p>
-              <strong>Bottom board</strong> — required. Put one on this hive
+              <strong>Bottom board</strong> — every hive needs one. Put one on
               from Unused. Garage pad bottoms stay on those pads.
             </p>
             <div className="segment">
@@ -208,22 +225,11 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
               </button>
             </div>
           </div>
-        ) : (
-          <ToggleRow
-            label="Bottom board"
-            on
-            locked
-            lockNote={
-              lockedPad
-                ? 'This pad’s bottom board stays here. It is not unused kit, and it cannot be used on the L-yard or the far-side hive.'
-                : 'Required on every hive. Taken from unused when you assigned it.'
-            }
-          />
-        )}
+        ) : null}
         {needsInner ? (
           <div className="lid-needed">
             <p>
-              <strong>Inner cover</strong> — required. Put one on this hive
+              <strong>Inner cover</strong> — every hive needs one. Put one on
               from Unused.
             </p>
             <div className="segment">
@@ -242,24 +248,18 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
               </button>
             </div>
           </div>
-        ) : (
-          <ToggleRow
-            label="Inner cover"
-            on
-            locked
-            lockNote="Required on every hive. Taken from unused when you assigned it."
-          />
-        )}
+        ) : null}
         {needsLid ? (
           <div className="lid-needed">
             <p>
-              <strong>Lid</strong> — required. Choose from your lid types.
-              Garage wooden lids stay on those pads and cannot be used here.
+              <strong>Lid</strong> — every hive needs one. Choose from your lid
+              types. Garage wooden lids stay on those pads and cannot be used
+              here.
             </p>
             {lidTypes.length === 0 ? (
               <p className="card-copy">
-                No lid types in your list. Add one on Unused if you need to put
-                a lid on.
+                No lid types in your list. Add one with Add part if you need to
+                put a lid on.
               </p>
             ) : (
               <div className="segment wrap-segment">
@@ -283,28 +283,30 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
               </div>
             )}
           </div>
-        ) : (
-          <ToggleRow
-            label={
-              lockedPad
-                ? 'Lid (wooden, stays on this pad)'
-                : lid?.typeId === METAL_LID
-                  ? 'Lid (metal)'
-                  : lid?.typeId === WOODEN_LID
-                    ? 'Lid (wooden)'
-                    : 'Lid'
-            }
-            on={Boolean(lid)}
-            locked
-            lockNote={
-              lockedPad
-                ? 'This pad’s wooden lid stays here. It cannot be used on the L-yard or the far-side hive.'
-                : metalLidLocked
-                  ? 'The large L-yard hives use metal lids.'
-                  : 'Required on every hive.'
-            }
-          />
-        )}
+        ) : null}
+        {parts.length === 0 && !needsBottom && !needsInner && !needsLid ? (
+          <p className="card-copy">No parts on this hive yet.</p>
+        ) : parts.length > 0 ? (
+          <ul className="extra-list">
+            {parts.map((layer) => (
+              <PartRow
+                key={layer.id}
+                layer={layer}
+                type={state.equipmentTypes.find((item) => item.id === layer.typeId)}
+                lockedPad={lockedPad}
+                metalLidLocked={metalLidLocked}
+                canRemove={canRemoveLayer(hive, pad, layer)}
+                onRemove={() =>
+                  dispatch({
+                    type: 'remove-layer',
+                    hiveId: hive.id,
+                    layerId: layer.id,
+                  })
+                }
+              />
+            ))}
+          </ul>
+        ) : null}
       </section>
 
       <section className="card stack-card">
@@ -384,42 +386,6 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
             </div>
           </>
         ) : null}
-      </section>
-
-      <section className="card">
-        <div className="card-row">
-          <h2>Other kit on this hive</h2>
-          <button className="text-btn" type="button" onClick={() => setExtraOpen(true)}>
-            Add
-          </button>
-        </div>
-        {extras.length === 0 ? (
-          <p className="card-copy">Frames and anything else you want counted as in use.</p>
-        ) : (
-          <ul className="extra-list">
-            {extras.map((layer) => {
-              const type = state.equipmentTypes.find((item) => item.id === layer.typeId)
-              return (
-                <li key={layer.id}>
-                  <span>{type?.name ?? layer.typeId}</span>
-                  <button
-                    type="button"
-                    className="text-btn"
-                    onClick={() =>
-                      dispatch({
-                        type: 'remove-layer',
-                        hiveId: hive.id,
-                        layerId: layer.id,
-                      })
-                    }
-                  >
-                    Return
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        )}
       </section>
 
       <section className="card">
@@ -620,35 +586,8 @@ export function HiveScreen({ hiveId }: { hiveId: string }) {
         </Sheet>
       ) : null}
 
-      {extraOpen ? (
-        <Sheet title="Add kit to this hive" onClose={() => setExtraOpen(false)}>
-          <div className="choice-list">
-            {state.equipmentTypes
-              .filter(
-                (item) =>
-                  item.id !== BOTTOM_BOARD &&
-                  item.id !== INNER_COVER &&
-                  !isLidChoice(item),
-              )
-              .map((type) => (
-              <button
-                key={type.id}
-                type="button"
-                onClick={() => {
-                  dispatch({
-                    type: 'add-extra',
-                    hiveId: hive.id,
-                    extraId: crypto.randomUUID(),
-                    typeId: type.id,
-                  })
-                  setExtraOpen(false)
-                }}
-              >
-                {type.name}
-              </button>
-            ))}
-          </div>
-        </Sheet>
+      {partOpen ? (
+        <AddPartSheet hiveId={hive.id} onClose={() => setPartOpen(false)} />
       ) : null}
 
       {confirmRemove ? (
@@ -838,25 +777,202 @@ function SplitSheet({
   )
 }
 
-function ToggleRow({
-  label,
-  on,
-  locked = false,
-  lockNote,
+function partRoleLabel(layer: StackLayer): string {
+  if (layer.role === 'bottom') return 'Bottom board'
+  if (layer.role === 'inner-cover') return 'Inner cover'
+  if (layer.role === 'lid') return 'Lid'
+  return 'Part'
+}
+
+function PartRow({
+  layer,
+  type,
+  lockedPad,
+  metalLidLocked,
+  canRemove,
+  onRemove,
 }: {
-  label: string
-  on: boolean
-  locked?: boolean
-  lockNote?: string
+  layer: StackLayer
+  type: EquipmentType | undefined
+  lockedPad: boolean
+  metalLidLocked: boolean
+  canRemove: boolean
+  onRemove: () => void
 }) {
+  const name = type?.name ?? layer.typeId
+  const title =
+    layer.role === 'extra' ? name : `${partRoleLabel(layer)} · ${name}`
+  const note = layer.siteLocked
+    ? lockedPad
+      ? 'Stays on this pad. Not unused kit, and it cannot be used on the L-yard or the far-side hive.'
+      : 'Stays on this pad.'
+    : layer.role === 'bottom'
+      ? 'Taken from unused when you assigned it.'
+      : layer.role === 'inner-cover'
+        ? 'Taken from unused when you assigned it.'
+        : layer.role === 'lid'
+          ? metalLidLocked
+            ? 'The large L-yard hives usually use metal lids.'
+            : 'Taken from unused when you assigned it.'
+          : undefined
   return (
-    <label className={locked ? 'toggle-row is-locked' : 'toggle-row'}>
+    <li>
       <span>
-        {label}
-        {locked && lockNote ? <span className="lock-note">{lockNote}</span> : null}
+        {title}
+        {note ? <span className="lock-note">{note}</span> : null}
       </span>
-      <input type="checkbox" checked={on} disabled={locked} readOnly />
-    </label>
+      {canRemove ? (
+        <button type="button" className="text-btn" onClick={onRemove}>
+          Remove
+        </button>
+      ) : null}
+    </li>
+  )
+}
+
+function AddPartSheet({
+  hiveId,
+  onClose,
+}: {
+  hiveId: string
+  onClose: () => void
+}) {
+  const { state, dispatch, inUse } = useStore()
+  const hive = state.hives.find((item) => item.id === hiveId)
+  const [addingType, setAddingType] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newGroup, setNewGroup] = useState<EquipmentGroup>('other')
+  const [newOwned, setNewOwned] = useState(0)
+  if (!hive) return null
+  const pad = hivePad(state, hive)
+  const locked = hasLockedBottomAndLid(pad)
+  const hasBottom = hive.stack.some((layer) => layer.role === 'bottom')
+  const hasInner = hive.stack.some((layer) => layer.role === 'inner-cover')
+  const hasLid = hive.stack.some((layer) => layer.role === 'lid')
+
+  function canPick(type: EquipmentType): boolean {
+    if (isMainBoxType(type.id)) return false
+    if (type.id === BOTTOM_BOARD) return !locked && !hasBottom
+    if (type.id === INNER_COVER) return !hasInner
+    if (isLidChoice(type)) return !locked && !hasLid
+    return true
+  }
+
+  function putOn(typeId: string) {
+    dispatch({
+      type: 'add-part',
+      hiveId,
+      typeId,
+      extraId: crypto.randomUUID(),
+    })
+    onClose()
+  }
+
+  const pickable = state.equipmentTypes.filter(canPick)
+
+  return (
+    <Sheet title="Add a part" onClose={onClose}>
+      <p className="sheet-lede">
+        Pick a type from unused, or add a new type into one of your four
+        sections and put it on this hive. Owned 0 is fine until you have
+        counted. Boxes stay on the stack above.
+      </p>
+      {GROUP_ORDER.map((group) => {
+        const types = pickable.filter((type) => type.group === group)
+        if (types.length === 0) return null
+        return (
+          <div key={group}>
+            <h3 className="sheet-sub">{GROUP_LABELS[group]}</h3>
+            <div className="choice-list">
+              {types.map((type) => {
+                const owned = state.owned[type.id] ?? 0
+                const used = inUse[type.id] ?? 0
+                const unused = unusedCount(owned, used)
+                return (
+                  <button
+                    key={type.id}
+                    type="button"
+                    onClick={() => putOn(type.id)}
+                  >
+                    {type.name}
+                    <span>
+                      {owned === 0 && used > 0
+                        ? 'owned not counted yet'
+                        : `${Math.max(0, unused)} unused`}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
+      {addingType ? (
+        <>
+          <h3 className="sheet-sub">New type</h3>
+          <label className="field">
+            <span>Section</span>
+            <select
+              value={newGroup}
+              onChange={(event) =>
+                setNewGroup(event.target.value as EquipmentGroup)
+              }
+            >
+              {GROUP_ORDER.map((group) => (
+                <option key={group} value={group}>
+                  {GROUP_LABELS[group]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span>Name</span>
+            <input
+              value={newName}
+              onChange={(event) => setNewName(event.target.value)}
+              placeholder="e.g. Mouse guard"
+              autoComplete="off"
+            />
+          </label>
+          <div className="card-row">
+            <p className="card-copy">Owned count. Leave 0 until you count.</p>
+            <Stepper
+              label="owned count"
+              value={newOwned}
+              max={999}
+              onChange={setNewOwned}
+            />
+          </div>
+          <button
+            className="primary"
+            type="button"
+            disabled={!newName.trim()}
+            onClick={() => {
+              const id = `custom-${crypto.randomUUID()}`
+              dispatch({
+                type: 'add-equipment-type',
+                id,
+                name: newName.trim(),
+                group: newGroup,
+                unit: defaultUnitForGroup(newGroup),
+                owned: newOwned,
+              })
+              putOn(id)
+            }}
+          >
+            Add and put on this hive
+          </button>
+        </>
+      ) : (
+        <button
+          className="secondary"
+          type="button"
+          onClick={() => setAddingType(true)}
+        >
+          Add a new type
+        </button>
+      )}
+    </Sheet>
   )
 }
 

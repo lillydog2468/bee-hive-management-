@@ -42,14 +42,10 @@ export function hiveNeedsInnerCover(hive: Hive): boolean {
 
 export function canRemoveLayer(
   _hive: Hive,
-  pad: Pad | undefined,
+  _pad: Pad | undefined,
   layer: StackLayer,
 ): boolean {
-  if (layer.siteLocked) return false
-  if (layer.role === 'inner-cover') return false
-  if (hasLockedBottomAndLid(pad)) return true
-  if (layer.role === 'bottom' || layer.role === 'lid') return false
-  return true
+  return !layer.siteLocked
 }
 
 export function stackAfterClear(hive: Hive, pad: Pad | undefined): StackLayer[] {
@@ -104,6 +100,22 @@ export function ensureRequiredParts(state: AppState): AppState {
     const next = ensureHiveRequiredParts(hive, pad, metalLidAvailable)
     if (next !== hive) changed = true
     return next
+  })
+  return changed ? { ...state, hives } : state
+}
+
+/** Garage pads drop unused-pool bottoms and lids. Does not put metal lids back. */
+export function ensureGaragePadParts(state: AppState): AppState {
+  let changed = false
+  const hives = state.hives.map((hive) => {
+    const pad = hive.padId
+      ? state.pads.find((item) => item.id === hive.padId)
+      : undefined
+    if (!hasLockedBottomAndLid(pad)) return hive
+    const stripped = stripPoolBottomAndLid(hive.stack)
+    if (stripped.length === hive.stack.length) return hive
+    changed = true
+    return { ...hive, stack: stripped }
   })
   return changed ? { ...state, hives } : state
 }

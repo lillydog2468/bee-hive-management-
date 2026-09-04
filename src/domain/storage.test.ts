@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   DEEP_BOX,
   DEEP_USED_FRAME,
+  looksLikeQueenExcluder,
   METAL_LID,
+  QUEEN_EXCLUDER,
   SHALLOW_FRAME,
   UNBUILT_SPRING_FRAME,
   WAXED_SPRING_FRAME,
@@ -30,7 +32,7 @@ describe('storage migrate', () => {
       })),
     }
     const next = migrateState(v1)
-    expect(next?.version).toBe(9)
+    expect(next?.version).toBe(10)
     expect(next?.pads.filter((pad) => pad.lockedBottomAndLid)).toHaveLength(10)
     expect(unusedForType(next!, WOODEN_LID)).toBe(0)
     expect(unusedForType(next!, METAL_LID)).toBe(5)
@@ -120,7 +122,7 @@ describe('storage migrate', () => {
       },
     }
     const next = migrateState(v7)
-    expect(next?.version).toBe(9)
+    expect(next?.version).toBe(10)
     expect(next?.owned[DEEP_BOX]).toBe(20)
     expect(next?.owned['custom-excluder']).toBe(3)
     expect(next?.equipmentTypes.find((type) => type.id === METAL_LID)?.group).toBe(
@@ -233,7 +235,7 @@ describe('storage migrate', () => {
       },
     }
     const next = migrateState(v8)
-    expect(next?.version).toBe(9)
+    expect(next?.version).toBe(10)
     expect(next?.owned[DEEP_BOX]).toBe(20)
     expect(next?.owned['custom-excluder']).toBe(3)
     expect(next?.equipmentTypes.find((type) => type.id === DEEP_BOX)?.group).toBe(
@@ -304,5 +306,73 @@ describe('storage migrate', () => {
     expect(next?.owned[DEEP_USED_FRAME]).toBe(50)
     expect(unusedForType(next!, DEEP_USED_FRAME)).toBe(50)
     expect(next?.owned[DEEP_BOX]).toBe(20)
+  })
+
+  it('adds a queen excluder type at owned 0 when upgrading older data that has none', () => {
+    const seed = createSeedState()
+    const owned = { ...seed.owned }
+    delete owned[QUEEN_EXCLUDER]
+    const v9 = {
+      ...seed,
+      version: 9 as const,
+      equipmentTypes: seed.equipmentTypes.filter(
+        (type) => type.id !== QUEEN_EXCLUDER,
+      ),
+      owned,
+    }
+    const next = migrateState(v9)
+    expect(next?.version).toBe(10)
+    expect(next?.equipmentTypes.some((type) => type.id === QUEEN_EXCLUDER)).toBe(
+      true,
+    )
+    expect(next?.owned[QUEEN_EXCLUDER]).toBe(0)
+    expect(unusedForType(next!, QUEEN_EXCLUDER)).toBe(0)
+    expect(next?.owned[DEEP_BOX]).toBe(20)
+  })
+
+  it('does not add a second queen excluder when Keith already has one', () => {
+    const seed = createSeedState()
+    const owned = { ...seed.owned, 'custom-excluder': 3 }
+    delete owned[QUEEN_EXCLUDER]
+    const v9 = {
+      ...seed,
+      version: 9 as const,
+      equipmentTypes: [
+        ...seed.equipmentTypes.filter((type) => type.id !== QUEEN_EXCLUDER),
+        {
+          id: 'custom-excluder',
+          name: 'Queen excluder',
+          shortName: 'Excluder',
+          group: 'other' as const,
+          builtIn: false,
+          unit: '',
+          frameTotal: null,
+        },
+      ],
+      owned,
+    }
+    const next = migrateState(v9)
+    expect(next?.equipmentTypes.filter(looksLikeQueenExcluder)).toHaveLength(1)
+    expect(next?.owned['custom-excluder']).toBe(3)
+    expect(next?.owned[QUEEN_EXCLUDER]).toBeUndefined()
+  })
+
+  it('does not re-add a queen excluder Keith deleted after v10', () => {
+    const seed = createSeedState()
+    const owned = { ...seed.owned }
+    delete owned[QUEEN_EXCLUDER]
+    const v10 = {
+      ...seed,
+      version: 10 as const,
+      equipmentTypes: seed.equipmentTypes.filter(
+        (type) => type.id !== QUEEN_EXCLUDER,
+      ),
+      owned,
+    }
+    const next = migrateState(v10)
+    expect(next?.equipmentTypes.some((type) => type.id === QUEEN_EXCLUDER)).toBe(
+      false,
+    )
+    expect(next?.owned[QUEEN_EXCLUDER]).toBeUndefined()
   })
 })
